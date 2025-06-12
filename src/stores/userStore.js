@@ -1,9 +1,9 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import api from "@/axios";
+import { AuthService } from "@/services";
 import { useRouter } from "vue-router";
 
-export const useCounterStore = defineStore('user', () => {
+export const useUserStore = defineStore('user', () => {
     const router = useRouter()
     const user = ref(null)
     const isAuthenticated = ref(false)
@@ -12,16 +12,15 @@ export const useCounterStore = defineStore('user', () => {
     const loading = ref(false)
 
     // load user data if authentificated 
-
     const checkAuth = async () => {
         try {
             loading.value = true
-            const response = await api.get('http://localhost:8000/api/user')
-            user.value = response.data
+            const userData = await AuthService.getCurrentUser()
+            user.value = userData
             isAuthenticated.value = true
             // Check if user has admin permissions
             isAdmin.value = user.value.role === 'administartor'
-        } catch (err) {
+        } catch {
             user.value = null
             isAuthenticated.value = false
             isAdmin.value = false
@@ -31,22 +30,17 @@ export const useCounterStore = defineStore('user', () => {
     }
 
     // login user 
-
     const login = async (credentials) => {
         try {
             loading.value = true
             error.value = null
-
-            // CSRF COOKIE
-            await api.get('/csrf-cookie')
             
-            //login
-            await api.post('http://127.0.0.1:8000/api/login', credentials)
+            // Login with AuthService
+            await AuthService.login(credentials)
             
             // get user data
             await checkAuth()
             router.push({ name: 'dashboard'})
-
         } catch (err) {
             error.value = err.response?.data?.message || 'Login failed'
             user.value = null
@@ -57,17 +51,13 @@ export const useCounterStore = defineStore('user', () => {
     }
 
     // register user 
-
     const register = async (userData) => {
         try {
             loading.value = true
             error.value = null
             
-            // CSRF COOKIE
-            await api.get('/csrf-cookie')
-            
-            // register
-            await api.post('http://127.0.0.1:8000/api/register', userData)
+            // Register with AuthService
+            await AuthService.register(userData)
             
             // get user data
             await checkAuth()
@@ -78,11 +68,11 @@ export const useCounterStore = defineStore('user', () => {
             loading.value = false
         }
     }
+    
     const logout = async () => {
         try {
-
             loading.value = true
-            await api.post('http://127.0.0.1:8000/api/logout')      
+            await AuthService.logout()
         } catch(err) {
             error.value = err.response?.data?.message || 'Logout failed'
         } finally{
@@ -92,7 +82,7 @@ export const useCounterStore = defineStore('user', () => {
             loading.value = false
             router.push({name: 'login'})
         }
-    } 
+    }
 
     return {
         user,
