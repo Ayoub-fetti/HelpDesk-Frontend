@@ -62,7 +62,20 @@ export default class AuthService {
 
   static async logout() {
     try {
-      const response = await api.post('/api/logout')
+      // Get CSRF cookie first
+      await api.get('http://localhost:8000/sanctum/csrf-cookie')
+      
+      // Add a small delay
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Extract CSRF token from cookies
+      const token = this.getCsrfToken()
+      
+      const response = await api.post('/api/logout', {}, {
+        headers: {
+          'X-XSRF-TOKEN': token
+        }
+      })
       return response.data
     } catch (error) {
       console.error('Logout error:', error)
@@ -72,7 +85,11 @@ export default class AuthService {
 
   static async getCurrentUser() {
     try {
-      const response = await api.get('/api/user')
+      const response = await api.get('/api/user', {
+        headers: {
+          'X-XSRF-TOKEN': this.getCsrfToken()
+        }
+      })
       return response.data
     } catch (error) {
       console.error('Get user error:', error)

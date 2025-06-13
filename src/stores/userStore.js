@@ -65,13 +65,17 @@ export const useUserStore = defineStore('user', () => {
             // Register with AuthService
             await AuthService.register(userData)
             
-            // Login immediately after successful registration
-            await login({
-                email: userData.email,
-                password: userData.password
+            // Instead of auto-login, just return success
+            router.push({ 
+                name: 'login', 
+                query: { registered: 'success' } 
             })
+            return true
         } catch (err) {
             error.value = err.response?.data?.message || 'Registration failed'
+            loading.value = false
+            return false
+        } finally {
             loading.value = false
         }
     }
