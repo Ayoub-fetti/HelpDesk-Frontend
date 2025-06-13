@@ -11,16 +11,17 @@ export const useUserStore = defineStore('user', () => {
     const error = ref(null)
     const loading = ref(false)
 
-    // load user data if authentificated 
+    // load user data if authenticated 
     const checkAuth = async () => {
         try {
             loading.value = true
             const userData = await AuthService.getCurrentUser()
             user.value = userData
             isAuthenticated.value = true
-            // Check if user has admin permissions
-            isAdmin.value = user.value.role === 'administartor'
-        } catch {
+            // Check if user has admin permissions (fixed typo)
+            isAdmin.value = user.value.role === 'administrator' 
+        } catch (err) {
+            console.error("Auth check failed:", err)
             user.value = null
             isAuthenticated.value = false
             isAdmin.value = false
@@ -40,7 +41,12 @@ export const useUserStore = defineStore('user', () => {
             
             // get user data
             await checkAuth()
-            router.push({ name: 'dashboard'})
+            
+            if (isAuthenticated.value) {
+                router.push({ name: 'dashboard'})
+            } else {
+                error.value = 'Authentication failed'
+            }
         } catch (err) {
             error.value = err.response?.data?.message || 'Login failed'
             user.value = null
@@ -59,12 +65,13 @@ export const useUserStore = defineStore('user', () => {
             // Register with AuthService
             await AuthService.register(userData)
             
-            // get user data
-            await checkAuth()
-            router.push({ name: 'dashboard'})
+            // Login immediately after successful registration
+            await login({
+                email: userData.email,
+                password: userData.password
+            })
         } catch (err) {
-            error.value = err.response?.data?.message || 'Register failed'
-        } finally {
+            error.value = err.response?.data?.message || 'Registration failed'
             loading.value = false
         }
     }
@@ -75,7 +82,7 @@ export const useUserStore = defineStore('user', () => {
             await AuthService.logout()
         } catch(err) {
             error.value = err.response?.data?.message || 'Logout failed'
-        } finally{
+        } finally {
             user.value = null
             isAuthenticated.value = false
             isAdmin.value = false

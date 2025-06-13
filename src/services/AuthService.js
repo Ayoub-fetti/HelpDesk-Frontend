@@ -3,10 +3,22 @@ import api from '@/axios'
 export default class AuthService {
   static async login(credentials) {
     try {
-      // Get CSRF cookie first
+      // Get CSRF cookie first with absolute URL
       await api.get('http://localhost:8000/sanctum/csrf-cookie')
-      // Attempt login
-      const response = await api.post('http://localhost:8000/api/login', credentials)
+      
+      // Add a small delay to ensure the cookie is properly set
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Extract CSRF token from cookies
+      const token = this.getCsrfToken()
+      console.log('CSRF Token:', token)
+      
+      // Attempt login with explicit CSRF token in header
+      const response = await api.post('/api/login', credentials, {
+        headers: {
+          'X-XSRF-TOKEN': token
+        }
+      })
       return response.data
     } catch (error) {
       console.error('Login error:', error)
@@ -14,12 +26,33 @@ export default class AuthService {
     }
   }
 
+  // Helper method to extract CSRF token from cookies
+  static getCsrfToken() {
+    const cookies = document.cookie.split(';')
+    const csrfCookie = cookies.find(cookie => cookie.trim().startsWith('XSRF-TOKEN='))
+    if (csrfCookie) {
+      return decodeURIComponent(csrfCookie.split('=')[1])
+    }
+    return null
+  }
+
   static async register(userData) {
     try {
       // Get CSRF cookie first
       await api.get('http://localhost:8000/sanctum/csrf-cookie')
-      // Register user
-      const response = await api.post('http://localhost:8000/api/register', userData)
+      
+      // Add a small delay
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Extract CSRF token from cookies
+      const token = this.getCsrfToken()
+      
+      // Register user with explicit CSRF token
+      const response = await api.post('/api/register', userData, {
+        headers: {
+          'X-XSRF-TOKEN': token
+        }
+      })
       return response.data
     } catch (error) {
       console.error('Registration error:', error)
@@ -29,7 +62,7 @@ export default class AuthService {
 
   static async logout() {
     try {
-      const response = await api.post('http://localhost:8000/api/logout')
+      const response = await api.post('/api/logout')
       return response.data
     } catch (error) {
       console.error('Logout error:', error)
@@ -39,7 +72,7 @@ export default class AuthService {
 
   static async getCurrentUser() {
     try {
-      const response = await api.get('http://localhost:8000/api/user')
+      const response = await api.get('/api/user')
       return response.data
     } catch (error) {
       console.error('Get user error:', error)
