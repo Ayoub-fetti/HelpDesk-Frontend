@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useUserStore } from '@/stores'
+import { RouterLink } from 'vue-router'
 
 const userStore = useUserStore()
 
@@ -12,8 +13,13 @@ const userData = ref({
   password_confirmation: ''
 })
 
+const showPassword = ref(false)
 const isSubmitting = ref(false)
 const validationErrors = ref({})
+
+const togglePasswordVisibility = () => {
+  showPassword.value = !showPassword.value
+}
 
 const submitRegistration = async () => {
   isSubmitting.value = true
@@ -29,126 +35,143 @@ const submitRegistration = async () => {
     isSubmitting.value = false
   }
 }
+
+const continueWithGoogle = () => {
+  // Implement Google OAuth integration here
+  console.log('Continue with Google clicked')
+}
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-    <div class="max-w-md w-full space-y-8">
-      <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Create your account
-        </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
-          Or
-          <RouterLink to="/login" class="font-medium text-blue-600 hover:text-blue-500">
-            sign in to your account
-          </RouterLink>
-        </p>
+  <div class="flex w-full h-screen">
+    <!-- Left panel -->
+    <div class="w-1/2 bg-gradient-to-br from-[#0B0F1C] to-[#0B1540] text-white flex flex-col justify-center px-20">
+      <div class="absolute top-8 left-8 text-2xl font-semibold">
+        <span class="italic">HelpDesk</span><span class="text-blue-500">.</span>
       </div>
-      
-      <div v-if="userStore.error" class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-        <div class="flex">
-          <div class="ml-3">
-            <p class="text-sm text-red-700">
-              {{ userStore.error }}
-            </p>
-          </div>
+      <h1 class="text-4xl font-light leading-relaxed mt-20">
+        Bienvenue.<br />
+        Démarrez votre aventure dès maintenant avec notre système de gestion !
+      </h1>
+    </div>
+
+    <!-- Right panel -->
+    <div class="w-1/2 bg-gradient-to-bl from-white to-[#F0F5FF] flex items-center justify-center">
+      <div class="bg-transparent rounded-lg w-full max-w-md mt-10 ">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6">Créer un compte</h2>
+        
+        <div v-if="userStore.error" class="bg-red-50 border-l-4 border-red-400 p-4 mb-4 text-left">
+          <p class="text-sm text-red-700">
+            {{ userStore.error }}
+          </p>
         </div>
-      </div>
-      
-      <form class="mt-8 space-y-6" @submit.prevent="submitRegistration">
-        <div class="rounded-md shadow-sm -space-y-px">
+        
+        <form class="space-y-2" @submit.prevent="submitRegistration">
           <div>
-            <label for="lastName" class="sr-only">last name</label>
+            <label for="firstName" class="block text-sm font-medium text-gray-700">Prénom</label>
             <input
-            id="lastName"
-            name="lastName"
-            type="text"
-            v-model="userData.lastName"
-            required
-            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-            placeholder="Last name"
-            />
-            <p v-if="validationErrors.lastName" class="mt-1 text-sm text-red-600">
-                {{ validationErrors.lastName[0] }}
-            </p>
-        </div>
-        <div>
-            <label for="firstName" class="sr-only">first name</label>
-            <input
-            id="firstName"
-            name="firstName"
-            type="text"
-            v-model="userData.firstName"
-            required
-            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-            placeholder="First name"
+              id="firstName"
+              name="firstName"
+              type="text"
+              v-model="userData.firstName"
+              required
+              placeholder="Votre prénom"
+              class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
             <p v-if="validationErrors.firstName" class="mt-1 text-sm text-red-600">
-                {{ validationErrors.firstName[0] }}
+              {{ validationErrors.firstName[0] }}
             </p>
-        </div>
+          </div>
+
           <div>
-            <label for="email-address" class="sr-only">Email address</label>
+            <label for="lastName" class="block text-sm font-medium text-gray-700">Nom</label>
+            <input
+              id="lastName"
+              name="lastName"
+              type="text"
+              v-model="userData.lastName"
+              required
+              placeholder="Votre nom"
+              class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none"
+            />
+            <p v-if="validationErrors.lastName" class="mt-1 text-sm text-red-600">
+              {{ validationErrors.lastName[0] }}
+            </p>
+          </div>
+          
+          <div>
+            <label for="email-address" class="block text-sm font-medium text-gray-700">Email</label>
             <input
               id="email-address"
               name="email"
               type="email"
               v-model="userData.email"
               required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="Email address"
+              placeholder="exemple@exemple.com"
+              class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
             <p v-if="validationErrors.email" class="mt-1 text-sm text-red-600">
               {{ validationErrors.email[0] }}
             </p>
           </div>
+          
           <div>
-            <label for="password" class="sr-only">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              v-model="userData.password"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="Password"
-            />
+            <label for="password" class="block text-sm font-medium text-gray-700">Mot De Passe</label>
+            <div class="relative">
+              <input
+                id="password"
+                :type="showPassword ? 'text' : 'password'"
+                name="password"
+                v-model="userData.password"
+                required
+                placeholder="Créer votre mot de passe"
+                class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 pr-10 outline-none"
+              />
+              <button 
+                type="button" 
+                @click="togglePasswordVisibility"
+                class="absolute inset-y-0 right-3 flex items-center text-gray-400"
+              >
+                <span v-if="showPassword">👁️</span>
+                <span v-else>👁️‍🗨️</span>
+              </button>
+            </div>
             <p v-if="validationErrors.password" class="mt-1 text-sm text-red-600">
               {{ validationErrors.password[0] }}
             </p>
           </div>
+          
           <div>
-            <label for="password-confirmation" class="sr-only">Confirm password</label>
-            <input
-              id="password-confirmation"
-              name="password_confirmation"
-              type="password"
-              v-model="userData.password_confirmation"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="Confirm password"
-            />
+            <label for="password-confirmation" class="block text-sm font-medium text-gray-700">Confirmer Mot De Passe</label>
+            <div class="relative">
+              <input
+                id="password-confirmation"
+                :type="showPassword ? 'text' : 'password'"
+                name="password_confirmation"
+                v-model="userData.password_confirmation"
+                required
+                placeholder="Confirmez votre mot de passe"
+                class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 pr-10 outline-none"
+              />
+            </div>
           </div>
-        </div>
 
-        <div>
           <button
             type="submit"
             :disabled="isSubmitting || userStore.loading"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            class="w-full bg-blue-600 text-white py-2 mt-4 rounded-md hover:bg-blue-700 transition-colors relative"
           >
-            <span v-if="isSubmitting || userStore.loading" class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <!-- Loading spinner -->
-              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+            <span v-if="isSubmitting || userStore.loading" class="absolute left-4 inset-y-0 flex items-center">
             </span>
-            {{ isSubmitting || userStore.loading ? 'Creating account...' : 'Create account' }}
+            {{ isSubmitting || userStore.loading ? 'Création en cours...' : 'Créer votre compte' }}
           </button>
-        </div>
-      </form>
+        </form>
+
+        <p class="mt-4 mb-2 text-sm text-gray-600 text-center">
+          Vous Avez Déjà Un Compte ?
+          <RouterLink to="/login" class="text-blue-500 hover:underline">Se Connecter</RouterLink>
+        </p>
+      </div>
     </div>
   </div>
 </template>
