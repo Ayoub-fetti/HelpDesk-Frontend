@@ -1,4 +1,5 @@
 import api from '@/axios'
+import AuthService from './AuthService'
 
 export default class BaseService {
   constructor(resource) {
@@ -52,7 +53,20 @@ export default class BaseService {
 
   async delete(id) {
     try {
-      const response = await this.api.delete(`${this.getBaseUrl()}/${id}`)
+      // Get CSRF cookie first
+      await api.get('http://localhost:8000/sanctum/csrf-cookie')
+      
+      // Add a small delay
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Get CSRF token using AuthService method
+      const token = AuthService.getCsrfToken()
+      
+      const response = await this.api.delete(`${this.getBaseUrl()}/${id}`, {
+        headers: {
+          'X-XSRF-TOKEN': token
+        }
+      })
       return response.data
     } catch (error) {
       console.error(`Error deleting ${this.resource}/${id}:`, error)

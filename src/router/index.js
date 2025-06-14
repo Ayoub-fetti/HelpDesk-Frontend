@@ -25,6 +25,16 @@ const router = createRouter({
       component: () => import('../views/DashboardView.vue'),
     },
     {
+      path: '/dashboard/technician',
+      name: 'dashboard-technician',
+      component: () => import('../views/DashboardTechnician.vue'),
+    },
+    {
+      path: '/dashboard/supervisor',
+      name: 'dashboard-supervisor',
+      component: () => import('../views/DashboardSupervisor.vue'),
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: () => import('../views/AdminView.vue'),
@@ -33,6 +43,11 @@ const router = createRouter({
       path: '/tickets/new',
       name: 'new-ticket',
       component: () => import('../views/NewTicketView.vue'),
+    },
+    {
+      path: '/tickets/update',
+      name: 'update-ticket',
+      component: () => import('../views/UpdateTicketView.vue'),
     },
     {
       path: '/ticket/:id',

@@ -71,21 +71,29 @@ export const useTicketStore = defineStore('tickets', () => {
   }
 
   // Delete a ticket
-  const deleteTicket = async (id) => {
-    try {
-      loading.value = true
-      error.value = null
+ const deleteTicket = async (id) => {
+  try {
+    loading.value = true
+    error.value = null
 
-      await ticketService.delete(id)
-      // Optionally remove the ticket from the tickets array
-      tickets.value = tickets.value.filter(ticket => ticket.id !== id)
-    } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to delete ticket'
-      throw err
-    } finally {
-      loading.value = false
-    }
+    console.log(`Attempting to delete ticket with ID: ${id}`)
+    
+    // Make the delete API call
+    await ticketService.delete(id)
+    
+    // If successful, remove the ticket from the store's state
+    tickets.value = tickets.value.filter(ticket => ticket.id !== id)
+    console.log(`Successfully deleted ticket with ID: ${id}`)
+    
+    return true
+  } catch (err) {
+    console.error(`Error deleting ticket ${id}:`, err)
+    error.value = err.response?.data?.message || `Failed to delete ticket #${id}`
+    throw err
+  } finally {
+    loading.value = false
   }
+}
 
   // Add a comment to a ticket
   const addComment = async (ticketId, comment) => {
