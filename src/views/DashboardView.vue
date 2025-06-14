@@ -37,10 +37,10 @@ const stats = computed(() => {
   const tickets = ticketStore.tickets
   return {
     total: tickets.length,
-    open: tickets.filter(t => ['NEW'].includes(t.statut)).length,
-    inProgress: tickets.filter(t => t.statut === 'IN_PROGRESS').length,
-    resolved: tickets.filter(t => t.statut === 'RESOLVED').length,
-    high: tickets.filter(t => t.priority === 'HIGH').length
+    open: tickets.filter(t => ['new'].includes(t.statut)).length,
+    inProgress: tickets.filter(t => t.statut === 'in_progress').length,
+    resolved: tickets.filter(t => t.statut === 'resolved').length,
+    high: tickets.filter(t => t.priority === 'hight').length
   }
 })
 
@@ -197,7 +197,7 @@ const formatPriority = (priority) => {
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold">Mes tickets</h2>
           <div class="flex gap-2">
-            <div class="relative inline-block">
+            <div class="relative inline-block group">
               <button class="bg-gray-100 px-3 py-1 rounded text-sm">
                 {{ statutFilter === 'all' ? 'Tous les statuts' : formatstatut(statutFilter) }}
                 <span class="ml-1">▼</span>
@@ -206,14 +206,17 @@ const formatPriority = (priority) => {
                 <div class="py-1">
                   <button @click="updatestatutFilter('all')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Tous les statuts</button>
                   <button @click="updatestatutFilter('new')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Nouveau</button>
-                  <button @click="updatestatutFilter('in_progress')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Ouvert</button>
-                  <button @click="updatestatutFilter('on_hold')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">En cours</button>
+                  <button @click="updatestatutFilter('in_progress')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">En cours</button>
+                  <button @click="updatestatutFilter('on_hold')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">En Attent</button>
                   <button @click="updatestatutFilter('resolved')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Résolu</button>
+                  <button @click="updatestatutFilter('assigned')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Attribué</button>
+                  <button @click="updatestatutFilter('closed')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Fermé</button>
+                  <button @click="updatestatutFilter('reopen')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Rouvrir</button>
                 </div>
               </div>
             </div>
             
-            <div class="relative inline-block">
+            <div class="relative inline-block group">
               <button class="bg-gray-100 px-3 py-1 rounded text-sm">
                 {{ priorityFilter === 'all' ? 'Toutes priorités' : formatPriority(priorityFilter) }}
                 <span class="ml-1">▼</span>
@@ -222,9 +225,9 @@ const formatPriority = (priority) => {
                 <div class="py-1">
                   <button @click="updatePriorityFilter('all')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Toutes priorités</button>
                   <button @click="updatePriorityFilter('low')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Basse</button>
-                  <button @click="updatePriorityFilter('medium')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Normale</button>
+                  <button @click="updatePriorityFilter('average')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Normale</button>
                   <button @click="updatePriorityFilter('high')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Haute</button>
-                  <button @click="updatePriorityFilter('critical')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Critique</button>
+                  <button @click="updatePriorityFilter('urgent')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">Critique</button>
                 </div>
               </div>
             </div>
