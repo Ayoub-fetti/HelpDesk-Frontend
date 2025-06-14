@@ -5,7 +5,7 @@ import { RouterView } from 'vue-router'
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- <Navbar /> -->
+    <Navbar />
     <main>
       <RouterView />
     </main>

@@ -36,10 +36,6 @@ const submitRegistration = async () => {
   }
 }
 
-const continueWithGoogle = () => {
-  // Implement Google OAuth integration here
-  console.log('Continue with Google clicked')
-}
 </script>
 
 <template>
@@ -51,7 +47,7 @@ const continueWithGoogle = () => {
       </div>
       <h1 class="text-4xl font-light leading-relaxed mt-20">
         Bienvenue.<br />
-        Démarrez votre aventure dès maintenant avec notre système de gestion !
+        Démarrez votre aventure dès maintenant avec notre système de gestion des tickets !
       </h1>
     </div>
 

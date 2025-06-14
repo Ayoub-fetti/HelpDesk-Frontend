@@ -32,7 +32,7 @@ const handleLogout = async () => {
               class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800"
               active-class="bg-blue-800"
             >
-              Home
+              Accueil 
             </RouterLink>
             
             <RouterLink 
@@ -41,7 +41,7 @@ const handleLogout = async () => {
               class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800"
               active-class="bg-blue-800"
             >
-              Dashboard
+              Tableau de bord
             </RouterLink>
             
             <RouterLink 
@@ -50,7 +50,7 @@ const handleLogout = async () => {
               class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800"
               active-class="bg-blue-800"
             >
-              New Ticket
+              Nouveau Ticket
             </RouterLink>
             
             <RouterLink 
@@ -70,7 +70,10 @@ const handleLogout = async () => {
             <!-- User info -->
             <div class="ml-3 relative group">
               <div class="flex items-center">
-                <span class="mr-2">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
+                <span class="mr-2">
+                  {{ currentUser?.firstName?.charAt(0).toUpperCase() + currentUser?.firstName?.slice(1) }}
+                  {{ currentUser?.lastName?.charAt(0).toUpperCase() + currentUser?.lastName?.slice(1) }}
+                </span>
                 <button
                   @click="handleLogout"
                   class="px-3 py-2 bg-blue-800 hover:bg-blue-700 rounded-md text-sm font-medium"
@@ -86,13 +89,13 @@ const handleLogout = async () => {
               to="/login"
               class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800"
             >
-              Login
+              Se connecter
             </RouterLink>
             <RouterLink
               to="/register"
               class="px-3 py-2 bg-blue-700 hover:bg-blue-600 rounded-md text-sm font-medium"
             >
-              Register
+              S'inscrire
             </RouterLink>
           </div>
         </div>
