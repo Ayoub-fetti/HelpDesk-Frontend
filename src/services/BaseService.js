@@ -31,15 +31,31 @@ export default class BaseService {
     }
   }
 
-  async create(data) {
-    try {
-      const response = await this.api.post(this.getBaseUrl(), data)
-      return response.data
-    } catch (error) {
-      console.error(`Error creating ${this.resource}:`, error)
-      throw error
+async create(data) {
+  try {
+    // Get CSRF cookie first
+    await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
+    
+    // Add a small delay
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    // Get CSRF token using AuthService method
+    const token = AuthService.getCsrfToken()
+    
+    const config = {
+      headers: {
+        'X-XSRF-TOKEN': token,
+        'Content-Type': data instanceof FormData ? 'multipart/form-data' : 'application/json'
+      }
     }
+    
+    const response = await this.api.post(this.getBaseUrl(), data, config)
+    return response.data
+  } catch (error) {
+    console.error(`Error creating ${this.resource}:`, error)
+    throw error
   }
+}
 
   async update(id, data) {
     try {

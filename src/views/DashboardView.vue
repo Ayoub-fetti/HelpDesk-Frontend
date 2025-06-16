@@ -8,6 +8,9 @@ const ticketStore = useTicketStore()
 const isLoading = ref(true)
 const statutFilter = ref('all')
 const priorityFilter = ref('all')
+const isDeleting = ref(false)
+const ticketToDelete = ref(null)
+const showDeleteConfirm = ref(false)
 
 
 // Fetch tickets on component mount
@@ -116,6 +119,36 @@ const formatPriority = (priority) => {
     urgent: 'Critique'
   }
   return priorityLabels[priority] || priority
+}
+
+// Open delete confirmation modal
+const confirmDelete = (ticket) => {
+  ticketToDelete.value = ticket
+  showDeleteConfirm.value = true
+}
+
+// Cancel deletion
+const cancelDelete = () => {
+  ticketToDelete.value = null
+  showDeleteConfirm.value = false
+}
+
+// Delete ticket
+const deleteTicket = async () => {
+  if (!ticketToDelete.value) return
+  
+  try {
+    isDeleting.value = true
+    await ticketStore.deleteTicket(ticketToDelete.value.id)
+    
+    // Close modal and reset
+    showDeleteConfirm.value = false
+    ticketToDelete.value = null
+  } catch (error) {
+    console.error('Failed to delete ticket:', error)
+  } finally {
+    isDeleting.value = false
+  }
 }
 </script>
 
@@ -278,17 +311,56 @@ const formatPriority = (priority) => {
                   </span>
                 </td>
                 <td class="p-3">{{ formatDate(ticket.created_at) }}</td>
-                <td class="p-3">{{ ticket.technician ? (ticket.technician.firstName + ' ' + ticket.technician.lastName) : '-' }}</td>                <td class="p-3 flex items-center gap-3 text-lg text-gray-600">
+                <td class="p-3">{{ ticket.technician ? (ticket.technician.firstName + ' ' + ticket.technician.lastName) : '-' }}</td>                
+                <td class="p-3 flex items-center gap-3 text-lg text-gray-600">
                   <RouterLink :to="`/ticket/${ticket.id}`" class="hover:text-blue-600" title="Voir">
                     <i class="fas fa-eye text-blue-500"></i>
                   </RouterLink>
                   <RouterLink :to="{name: 'update-ticket', query: { id: ticket.id }}" title="Modifier">
                     <i class="fas fa-edit text-orange-500"></i>
                   </RouterLink>
+                  <button @click="confirmDelete(ticket)" class="hover:text-red-600" title="Supprimer">
+                    <i class="fas fa-trash text-red-500"></i>
+                  </button>
                 </td>
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteConfirm" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+      <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="p-6">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Confirmer la suppression</h3>
+          <p class="text-sm text-gray-500">
+            Êtes-vous sûr de vouloir supprimer le ticket 
+            <span class="font-medium">{{ ticketToDelete?.title }}</span> ?
+            Cette action est irréversible.
+          </p>
+          
+          <div class="mt-6 flex justify-end space-x-3">
+            <button
+              @click="cancelDelete"
+              class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded transition-colors"
+            >
+              Annuler
+            </button>
+            
+            <button
+              @click="deleteTicket"
+              :disabled="isDeleting"
+              class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors flex items-center"
+            >
+              <svg v-if="isDeleting" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ isDeleting ? 'Suppression...' : 'Confirmer la suppression' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
