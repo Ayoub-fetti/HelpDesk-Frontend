@@ -11,8 +11,7 @@ const ticketData = ref({
   title: '',
   description: '',
   priority: '',
-  category_id: '',
-  phone: ''
+  category_id: ''
 })
 
 const attachments = ref([])
@@ -166,16 +165,7 @@ const submitTicket = async () => {
             <p v-if="validationErrors.description" class="text-sm text-red-600">{{ validationErrors.description[0] }}</p>
           </div>
 
-          <!-- Téléphone -->
-          <div v-if="currentStep >= 3">
-            <label class="block text-sm font-medium text-gray-700">Téléphone (optionnel)</label>
-            <input
-              v-model="ticketData.phone"
-              type="tel"
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Ex: +212..."
-            />
-          </div>
+
 
           <!-- Pièces jointes -->
           <div v-if="currentStep >= 3">
