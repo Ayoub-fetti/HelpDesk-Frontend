@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTicketStore, useUserStore } from '@/stores'
 import Navbar from '@/components/layout/navbar.vue'
@@ -94,18 +94,22 @@ const getPriorityBadgeClass = (priority) => {
   }
 }
 
-// Format time duration (seconds to HH:MM:SS)
-const formatDuration = (seconds) => {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const remainingSeconds = seconds % 60
+// Format time duration with proper handling of different duration formats
+function formatDuration(duration) {
+  if (typeof duration === 'object' && duration.formatted_duration) {
+    const { hours, minutes, seconds } = duration.formatted_duration;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
   
-  return [
-    hours.toString().padStart(2, '0'),
-    minutes.toString().padStart(2, '0'),
-    remainingSeconds.toString().padStart(2, '0')
-  ].join(':')
+  // For running timer
+  const totalSeconds = typeof duration === 'number' ? duration : 0;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
+
 
 // Fetch time tracking data
 const fetchTimeTracking = async () => {
@@ -184,8 +188,12 @@ const stopTimeTracking = async () => {
     isTimeRunning.value = false
     
     // Update tracking data with the final time
+    if (!timeTracking.value) {
+      timeTracking.value = {}
+    }
     timeTracking.value.is_running = false
     timeTracking.value.total_seconds = elapsedTime.value
+    timeTracking.value.duration = elapsedTime.value / 3600 // Convert seconds to hours
     
     // Clear the interval
     if (timeTrackingInterval.value) {
@@ -521,7 +529,7 @@ const getCommentAuthor = (comment) => {
                 <!-- Time counter -->
                 <div class="bg-white border border-gray-200 rounded-lg p-4 text-center">
                   <div class="text-3xl font-mono">{{ formatDuration(elapsedTime) }}</div>
-                  <div class="text-xs text-gray-500 mt-1">Heures:Minutes:Secondes</div>
+                  <div class="text-xs text-gray-500 mt-1">Seconds : Heures : Minutes</div>
                 </div>
                 
                 <!-- Start/Stop buttons -->
@@ -555,7 +563,7 @@ const getCommentAuthor = (comment) => {
                     Temps en cours d'enregistrement
                   </span>
                   <span v-else class="text-gray-500">
-    Temps total enregistré: {{ formatDuration(timeTracking?.duration ? Math.round(timeTracking.duration * 3600) : 0) }}
+                    Temps total enregistré: {{ formatDuration(timeTracking) }}
                   </span>
                 </div>
               </div>
