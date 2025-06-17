@@ -142,6 +142,10 @@ onUnmounted(() => {
 const handleLogout = async () => {
   await userStore.logout()
 }
+
+const previewNotifications = computed(() => {
+  return notifications.value.slice(0,5);
+})
 </script>
 
 <template>
@@ -246,7 +250,7 @@ const handleLogout = async () => {
                   <!-- Notification list -->
                   <div v-else>
                     <div 
-                      v-for="notification in notifications" 
+                      v-for="notification in previewNotifications" 
                       :key="notification.id" 
                       :class="[
                         'p-3 border-b border-gray-100 text-sm cursor-pointer hover:bg-gray-50', 
