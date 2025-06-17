@@ -32,9 +32,8 @@ const toggleNotifications = async () => {
 // Mark a notification as read
 const markAsRead = async (notificationId) => {
   try {
-    console.log(`Marking notification ${notificationId} as read...`)
+
     await notificationStore.markAsRead(notificationId)
-    console.log(`Notification ${notificationId} marked as read successfully`)
   } catch (error) {
     console.error(`Failed to mark notification ${notificationId} as read:`, error)
   }
@@ -43,9 +42,7 @@ const markAsRead = async (notificationId) => {
 // Mark all notifications as read
 const markAllAsRead = async () => {
   try {
-    console.log('Marking all notifications as read...')
     await notificationStore.markAllAsRead()
-    console.log('All notifications marked as read successfully')
   } catch (error) {
     console.error('Failed to mark all notifications as read:', error)
   }
@@ -74,23 +71,13 @@ const closeNotifications = (event) => {
 const initializeNotifications = async () => {
   if (isAuthenticated.value) {
     try {
-      console.log('Fetching unread notification count...')
       // Initial fetch
       await notificationStore.fetchUnreadCount()
-      console.log('Initial unread count:', unreadCount.value)
-      
-      // For debugging, log the raw notifications state
-      console.log('Notification store state:', {
-        unreadCount: notificationStore.unreadCount,
-        error: notificationStore.error,
-        loading: notificationStore.loading
-      });
       
       // Set up periodic refresh of unread count (every 30 seconds)
       notificationTimer.value = setInterval(async () => {
         if (isAuthenticated.value) {
           await notificationStore.fetchUnreadCount()
-          console.log('Refreshed unread count:', unreadCount.value)
         }
       }, 30000)
     } catch (error) {
