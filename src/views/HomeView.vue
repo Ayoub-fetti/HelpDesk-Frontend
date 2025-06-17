@@ -35,7 +35,7 @@ import Navbar from '@/components/layout/navbar.vue'
             </div>
           </div>
           <div class="lg:w-1/2 ml-8 flex justify-center">
-            <img src="@/assets/h.png" alt="HelpDesk" class="w-3/4 max-w-md">
+            <img src="@/assets/support.png" alt="HelpDesk" class="w-3/4 max-w-md">
           </div>
         </div>
       </div>

@@ -30,9 +30,25 @@ export const useNotificationStore = defineStore('notifications', () => {
       error.value = null
       
       const response = await notificationService.getUnreadCount()
-      unreadCount.value = response.count || 0
+      console.log('Unread count response:', response)
+      
+      // Handle different response structures
+      if (typeof response === 'number') {
+        unreadCount.value = response
+      } else if (response && response.count !== undefined) {
+        unreadCount.value = response.count
+      } else if (response && response.unread_count !== undefined) {
+        unreadCount.value = response.unread_count
+      } else {
+        console.log('Could not parse unread count from response:', response)
+        unreadCount.value = 0
+      }
+      
+      console.log('Unread count value set to:', unreadCount.value)
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to fetch unread count'
+      error.value = 'Failed to fetch unread count'
+      console.error('Error in fetchUnreadCount:', err)
+      unreadCount.value = 0 // Set default value on error
     } finally {
       loading.value = false
     }
