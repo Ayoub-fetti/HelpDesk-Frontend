@@ -96,18 +96,29 @@ const getPriorityBadgeClass = (priority) => {
 
 // Format time duration with proper handling of different duration formats
 function formatDuration(duration) {
-  if (typeof duration === 'object' && duration.formatted_duration) {
+  // Case 1: Handle formatted_duration object from backend
+  if (duration?.formatted_duration) {
     const { hours, minutes, seconds } = duration.formatted_duration;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
   
-  // For running timer
-  const totalSeconds = typeof duration === 'number' ? duration : 0;
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = Math.floor(totalSeconds % 60);
+  // Case 2: Handle duration as decimal hours from backend
+  if (typeof duration === 'number') {
+    const totalSeconds = Math.floor(duration * 3600); // Convert hours to seconds
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  // Case 3: Handle tracking object with duration property
+  if (duration?.duration) {
+    return formatDuration(duration.duration);
+  }
   
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  // Default case: return 00:00:00
+  return '00:00:00';
 }
 
 
@@ -120,23 +131,28 @@ const fetchTimeTracking = async () => {
     const response = await ticketStore.getTimeTracking(ticketId.value)
     timeTracking.value = response
     
-    // Check if time is currently being tracked
-    if (timeTracking.value && timeTracking.value.is_running) {
+    // Check if there's an active tracking session
+    const activeTracking = response.find(track => track.end_date === null)
+    
+    if (activeTracking) {
       isTimeRunning.value = true
-      
-      // Calculate elapsed time since start
-      const startTime = new Date(timeTracking.value.current_session_start)
+      const startTime = new Date(activeTracking.start_date)
       const now = new Date()
       const initialElapsed = Math.floor((now - startTime) / 1000)
-      
-      // Set initial elapsed time (previous sessions + current running session)
-      elapsedTime.value = (timeTracking.value.total_seconds || 0) + initialElapsed
-      
-      // Start timer to update elapsed time
+      elapsedTime.value = initialElapsed
       startTimeUpdateInterval()
     } else {
-      // Just set the total tracked time
-      elapsedTime.value = timeTracking.value?.total_seconds || 0
+      // Get the last completed tracking session
+      const lastTracking = [...response].sort((a, b) => 
+        new Date(b.end_date) - new Date(a.end_date)
+      )[0]
+      
+      if (lastTracking && typeof lastTracking.duration === 'number') {
+        // Convert duration from hours (0.02) to seconds (72)
+        elapsedTime.value = Math.round(lastTracking.duration * 3600)
+      } else {
+        elapsedTime.value = 0
+      }
       isTimeRunning.value = false
     }
   } catch (error) {
@@ -529,7 +545,7 @@ const getCommentAuthor = (comment) => {
                 <!-- Time counter -->
                 <div class="bg-white border border-gray-200 rounded-lg p-4 text-center">
                   <div class="text-3xl font-mono">{{ formatDuration(elapsedTime) }}</div>
-                  <div class="text-xs text-gray-500 mt-1">Seconds : Heures : Minutes</div>
+                  <div class="text-xs text-gray-500 mt-1">Heures : Minutes : Secondes</div>
                 </div>
                 
                 <!-- Start/Stop buttons -->
@@ -563,7 +579,7 @@ const getCommentAuthor = (comment) => {
                     Temps en cours d'enregistrement
                   </span>
                   <span v-else class="text-gray-500">
-                    Temps total enregistré: {{ formatDuration(timeTracking) }}
+                    Temps total enregistré: {{ formatDuration(elapsedTime) }}
                   </span>
                 </div>
               </div>
