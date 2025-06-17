@@ -99,7 +99,7 @@ onMounted(async () => {
         }
       });
       const data = await response.json();
-      console.log('Raw API response for unread count:', data);
+
     } catch (err) {
       console.error('Error testing notification endpoint:', err);
     }
@@ -158,7 +158,7 @@ const previewNotifications = computed(() => {
               class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800"
               active-class="bg-blue-800"
             >
-              Contactez-nous 
+              Support 
             </RouterLink>
             
             <RouterLink 

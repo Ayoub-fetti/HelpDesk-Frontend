@@ -19,7 +19,7 @@ export const useUserStore = defineStore('user', () => {
             user.value = userData
             isAuthenticated.value = true
             // Check if user has admin permissions (fixed typo)
-            isAdmin.value = user.value.role === 'administrator' 
+            isAdmin.value = user.value.user_type === 'administrator' 
         } catch (err) {
             console.error("Auth check failed:", err)
             user.value = null

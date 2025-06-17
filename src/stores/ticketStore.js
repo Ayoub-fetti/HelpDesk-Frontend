@@ -96,12 +96,12 @@ export const useTicketStore = defineStore('tickets', () => {
 }
 
   // Add a comment to a ticket
-  const addComment = async (ticketId, comment) => {
+  const addComment = async (ticketId, commentData) => {
     try {
       loading.value = true
       error.value = null
       
-      const response = await ticketService.addComment(ticketId, comment)
+      const response = await ticketService.addComment(ticketId, commentData)
       return response
     } catch (err) {
       error.value = err.response?.data?.message || 'Failed to add comment'
@@ -126,6 +126,48 @@ export const useTicketStore = defineStore('tickets', () => {
       loading.value = false
     }
   }
+    const getTimeTracking = async (ticketId) => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      const response = await ticketService.getTimeTracking(ticketId)
+      return response
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to fetch time tracking data'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+    const startTimeTracking = async (ticketId) => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      const response = await ticketService.startTimeTracking(ticketId)
+      return response
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to start time tracking'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+    const stopTimeTracking = async (ticketId) => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      const response = await ticketService.stopTimeTracking(ticketId)
+      return response
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to stop time tracking'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
 
   return {
     tickets,
@@ -138,6 +180,9 @@ export const useTicketStore = defineStore('tickets', () => {
     updateTicket,
     deleteTicket,
     addComment,
-    fetchComments
+    fetchComments,
+    getTimeTracking,
+    startTimeTracking,
+    stopTimeTracking
   }
 })

@@ -1,13 +1,36 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useTicketStore } from '@/stores'
+import { useTicketStore, useUserStore } from '@/stores'
 import Navbar from '@/components/layout/navbar.vue'
 
 const route = useRoute()
 const ticketStore = useTicketStore()
+const userStore = useUserStore()
 const isLoading = ref(true)
+const comments = ref([])
+const commentUsers = ref({}) // Cache for user data
+const loadingComments = ref(false)
+const newComment = ref('')
+const isPrivateComment = ref(false)
+const submittingComment = ref(false)
 const ticketId = computed(() => route.params.id)
+const isAdmin = computed(() => userStore.isAdmin)
+const currentUser = computed(() => userStore.user)
+
+// Time tracking states
+const timeTracking = ref(null)
+const isTimeTrackingLoading = ref(false)
+const isTimeRunning = ref(false)
+const elapsedTime = ref(0)
+const timeTrackingInterval = ref(null)
+
+// Check if user is staff (admin, supervisor, or technician)
+const isStaff = computed(() => {
+  if (!currentUser.value) return false
+  const userType = currentUser.value.user_type
+  return userType === 'administrator' || userType === 'supervisor' || userType === 'technician'
+})
 
 // Format date helper
 const formatDate = (dateString) => {
@@ -71,17 +94,214 @@ const getPriorityBadgeClass = (priority) => {
   }
 }
 
+// Format time duration (seconds to HH:MM:SS)
+const formatDuration = (seconds) => {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const remainingSeconds = seconds % 60
+  
+  return [
+    hours.toString().padStart(2, '0'),
+    minutes.toString().padStart(2, '0'),
+    remainingSeconds.toString().padStart(2, '0')
+  ].join(':')
+}
+
+// Fetch time tracking data
+const fetchTimeTracking = async () => {
+  if (!isStaff.value) return
+  
+  try {
+    isTimeTrackingLoading.value = true
+    const response = await ticketStore.getTimeTracking(ticketId.value)
+    timeTracking.value = response
+    
+    // Check if time is currently being tracked
+    if (timeTracking.value && timeTracking.value.is_running) {
+      isTimeRunning.value = true
+      
+      // Calculate elapsed time since start
+      const startTime = new Date(timeTracking.value.current_session_start)
+      const now = new Date()
+      const initialElapsed = Math.floor((now - startTime) / 1000)
+      
+      // Set initial elapsed time (previous sessions + current running session)
+      elapsedTime.value = (timeTracking.value.total_seconds || 0) + initialElapsed
+      
+      // Start timer to update elapsed time
+      startTimeUpdateInterval()
+    } else {
+      // Just set the total tracked time
+      elapsedTime.value = timeTracking.value?.total_seconds || 0
+      isTimeRunning.value = false
+    }
+  } catch (error) {
+    console.error('Failed to fetch time tracking data:', error)
+  } finally {
+    isTimeTrackingLoading.value = false
+  }
+}
+
+// Start time update interval
+const startTimeUpdateInterval = () => {
+  // Clear any existing interval
+  if (timeTrackingInterval.value) {
+    clearInterval(timeTrackingInterval.value)
+  }
+  
+  // Update elapsed time every second
+  timeTrackingInterval.value = setInterval(() => {
+    if (isTimeRunning.value) {
+      elapsedTime.value += 1
+    }
+  }, 1000)
+}
+
+// Start time tracking
+const startTimeTracking = async () => {
+  try {
+    await ticketStore.startTimeTracking(ticketId.value)
+    isTimeRunning.value = true
+    
+    // Set current session start time to now
+    if (!timeTracking.value) {
+      timeTracking.value = { total_seconds: 0 }
+    }
+    timeTracking.value.current_session_start = new Date().toISOString()
+    timeTracking.value.is_running = true
+    
+    // Start updating the timer
+    startTimeUpdateInterval()
+  } catch (error) {
+    console.error('Failed to start time tracking:', error)
+  }
+}
+
+// Stop time tracking
+const stopTimeTracking = async () => {
+  try {
+    await ticketStore.stopTimeTracking(ticketId.value)
+    isTimeRunning.value = false
+    
+    // Update tracking data with the final time
+    timeTracking.value.is_running = false
+    timeTracking.value.total_seconds = elapsedTime.value
+    
+    // Clear the interval
+    if (timeTrackingInterval.value) {
+      clearInterval(timeTrackingInterval.value)
+      timeTrackingInterval.value = null
+    }
+  } catch (error) {
+    console.error('Failed to stop time tracking:', error)
+  }
+}
+
+// Fetch user details for a comment author
+const fetchCommentAuthor = async (authorId) => {
+  try {
+    // Check if we already have cached data
+    if (!commentUsers.value[authorId]) {
+      // Simulate user data lookup or make API call to get user info
+      // This is where you'd make an API call to fetch user details
+      
+      // For now, we'll check if the author is the current ticket creator or technician
+      if (ticketStore.currentTicket) {
+        if (ticketStore.currentTicket.user && ticketStore.currentTicket.user.id === authorId) {
+          commentUsers.value[authorId] = ticketStore.currentTicket.user
+        } else if (ticketStore.currentTicket.technician && ticketStore.currentTicket.technician.id === authorId) {
+          commentUsers.value[authorId] = ticketStore.currentTicket.technician
+        } else if (currentUser.value && currentUser.value.id === authorId) {
+          commentUsers.value[authorId] = currentUser.value
+        } else {
+          // Default fallback if user details can't be found
+          commentUsers.value[authorId] = {
+            firstName: 'Utilisateur',
+            lastName: '#' + authorId
+          }
+        }
+      }
+    }
+    return commentUsers.value[authorId]
+  } catch (error) {
+    console.error('Failed to fetch user details:', error)
+    return { firstName: 'Utilisateur', lastName: '#' + authorId }
+  }
+}
+
+// Fetch comments
+const fetchComments = async () => {
+  try {
+    loadingComments.value = true
+    const response = await ticketStore.fetchComments(ticketId.value)
+    comments.value = response || []
+    
+    // Fetch user details for each comment
+    for (const comment of comments.value) {
+      if (comment.author_id) {
+        await fetchCommentAuthor(comment.author_id)
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch comments:', error)
+  } finally {
+    loadingComments.value = false
+  }
+}
+
+// Submit new comment
+const submitComment = async () => {
+  if (!newComment.value.trim()) return
+  
+  try {
+    submittingComment.value = true
+    
+    await ticketStore.addComment(ticketId.value, {
+      content: newComment.value,
+      is_private: isPrivateComment.value
+    })
+    
+    // Clear input and refresh comments
+    newComment.value = ''
+    isPrivateComment.value = false
+    await fetchComments()
+    
+  } catch (error) {
+    console.error('Failed to submit comment:', error)
+  } finally {
+    submittingComment.value = false
+  }
+}
+
 // Fetch ticket details on component mount
 onMounted(async () => {
   try {
     isLoading.value = true
     await ticketStore.fetchTicket(ticketId.value)
+    await fetchComments()
+    
+    // If staff user, fetch time tracking data
+    if (isStaff.value) {
+      await fetchTimeTracking()
+    }
   } catch (error) {
     console.error('Failed to fetch ticket details:', error)
   } finally {
     isLoading.value = false
   }
 })
+
+// Clean up intervals when component unmounts
+onUnmounted(() => {
+  if (timeTrackingInterval.value) {
+    clearInterval(timeTrackingInterval.value)
+  }
+})
+
+// Get comment author
+const getCommentAuthor = (comment) => {
+  return commentUsers.value[comment.author_id] || { firstName: 'Utilisateur', lastName: '' }
+}
 </script>
 
 <template>
@@ -140,28 +360,105 @@ onMounted(async () => {
             </div>
             
             <!-- Attachments section -->
-            <div class="bg-gray-50 p-6 rounded-lg">
-            <h2 class="text-lg font-medium text-gray-800 mb-4">Pièces jointes</h2>
-            
-            <div v-if="ticketStore.currentTicket.attachments && ticketStore.currentTicket.attachments.length > 0">
+            <div class="bg-gray-50 p-6 rounded-lg mb-6">
+              <h2 class="text-lg font-medium text-gray-800 mb-4">Pièces jointes</h2>
+              
+              <div v-if="ticketStore.currentTicket.attachments && ticketStore.currentTicket.attachments.length > 0">
                 <ul class="space-y-2">
-                <li v-for="(attachment, index) in ticketStore.currentTicket.attachments" :key="index" class="flex items-center gap-2 p-2 border rounded-md bg-white">
+                  <li v-for="(attachment, index) in ticketStore.currentTicket.attachments" :key="index" class="flex items-center gap-2 p-2 border rounded-md bg-white">
                     <i class="fas fa-paperclip text-gray-400"></i>
                     <a 
-                    :href="`http://localhost:8000/storage/${attachment.path}`" 
-                    target="_blank" 
-                    class="text-blue-600 hover:underline"
+                      :href="`http://localhost:8000/storage/${attachment.path}`" 
+                      target="_blank" 
+                      class="text-blue-600 hover:underline"
                     >
-                    {{ attachment.original_name || attachment.name }}
+                      {{ attachment.original_name || attachment.name }}
                     </a>
-                </li>
+                  </li>
                 </ul>
+              </div>
+              
+              <div v-else class="text-gray-500 italic">
+                Aucune pièce jointe pour ce ticket
+              </div>
             </div>
-  
-  <div v-else class="text-gray-500 italic">
-    Aucune pièce jointe pour ce ticket
-  </div>
-</div>
+            
+            <!-- Comments section -->
+            <div class="bg-gray-50 p-6 rounded-lg">
+              <h2 class="text-lg font-medium text-gray-800 mb-4">Conversation</h2>
+              
+              <!-- Comments loading state -->
+              <div v-if="loadingComments" class="py-4 text-center text-gray-500">
+                <i class="fas fa-circle-notch fa-spin mr-2"></i>
+                Chargement des commentaires...
+              </div>
+              
+              <!-- No comments state -->
+              <div v-else-if="!comments.length" class="py-4 text-center text-gray-500">
+                <p>Aucun commentaire pour le moment</p>
+              </div>
+              
+              <!-- Comments list -->
+              <div v-else class="space-y-4 mb-6">
+                <div 
+                  v-for="comment in comments" 
+                  :key="comment.id" 
+                  :class="[
+                    'p-4 rounded-lg', 
+                    comment.is_private ? 'bg-yellow-50 border border-yellow-100' : 'bg-white border border-gray-100'
+                  ]"
+                >
+                  <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center">
+                      <div class="font-medium text-gray-800">
+                        {{ getCommentAuthor(comment).firstName }} {{ getCommentAuthor(comment).lastName }}
+                      </div>
+                      <span v-if="comment.is_private" class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <i class="fas fa-lock text-xs mr-1"></i>
+                        Privé
+                      </span>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                      {{ formatDate(comment.created_at) }}
+                    </div>
+                  </div>
+                  <p class="text-gray-700">{{ comment.content }}</p>
+                </div>
+              </div>
+              
+              <!-- New comment form -->
+              <form @submit.prevent="submitComment" class="mt-4">
+                <textarea
+                  v-model="newComment"
+                  rows="3"
+                  placeholder="Ajouter un commentaire..."
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                ></textarea>
+                
+                <div class="mt-2 flex items-center justify-between">
+                  <div class="flex items-center" v-if="isAdmin">
+                    <input 
+                      id="is-private" 
+                      type="checkbox" 
+                      v-model="isPrivateComment" 
+                      class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label for="is-private" class="ml-2 text-sm text-gray-700">
+                      Commentaire privé (visible uniquement par l'équipe technique)
+                    </label>
+                  </div>
+                  
+                  <button 
+                    type="submit" 
+                    :disabled="submittingComment || !newComment.trim()" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                  >
+                    <i v-if="submittingComment" class="fas fa-circle-notch fa-spin mr-2"></i>
+                    {{ submittingComment ? 'Envoi...' : 'Envoyer' }}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
           
           <!-- Right column: Meta information -->
@@ -202,6 +499,66 @@ onMounted(async () => {
                   <dd class="text-sm text-gray-900">{{ formatDate(ticketStore.currentTicket.updated_at) }}</dd>
                 </div>
               </dl>
+            </div>
+            
+            <!-- Time Tracking section - Only visible to staff users -->
+            <div v-if="isStaff" class="bg-gray-50 p-6 rounded-lg mt-4">
+              <h2 class="text-lg font-medium text-gray-800 mb-4">
+                <i class="fas fa-clock mr-2 text-blue-600"></i>
+                Suivi de temps
+              </h2>
+              
+              <!-- Loading state -->
+              <div v-if="isTimeTrackingLoading" class="flex justify-center py-4">
+                <div class="text-gray-500">
+                  <i class="fas fa-circle-notch fa-spin mr-2"></i>
+                  Chargement...
+                </div>
+              </div>
+              
+              <!-- Time tracking content -->
+              <div v-else class="space-y-4">
+                <!-- Time counter -->
+                <div class="bg-white border border-gray-200 rounded-lg p-4 text-center">
+                  <div class="text-3xl font-mono">{{ formatDuration(elapsedTime) }}</div>
+                  <div class="text-xs text-gray-500 mt-1">Heures:Minutes:Secondes</div>
+                </div>
+                
+                <!-- Start/Stop buttons -->
+                <div class="flex justify-center space-x-3">
+                  <button 
+                    v-if="!isTimeRunning" 
+                    @click="startTimeTracking" 
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    <i class="fas fa-play mr-2"></i>
+                    Démarrer
+                  </button>
+                  
+                  <button 
+                    v-else 
+                    @click="stopTimeTracking" 
+                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  >
+                    <i class="fas fa-stop mr-2"></i>
+                    Arrêter
+                  </button>
+                </div>
+                
+                <!-- Status indicator -->
+                <div class="text-center text-sm">
+                  <span v-if="isTimeRunning" class="text-green-600 flex items-center justify-center">
+                    <span class="relative flex h-3 w-3 mr-2">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </span>
+                    Temps en cours d'enregistrement
+                  </span>
+                  <span v-else class="text-gray-500">
+    Temps total enregistré: {{ formatDuration(timeTracking?.duration ? Math.round(timeTracking.duration * 3600) : 0) }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

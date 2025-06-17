@@ -30,7 +30,6 @@ export const useNotificationStore = defineStore('notifications', () => {
       error.value = null
       
       const response = await notificationService.getUnreadCount()
-      console.log('Unread count response:', response)
       
       // Handle different response structures
       if (typeof response === 'number') {
@@ -44,10 +43,9 @@ export const useNotificationStore = defineStore('notifications', () => {
         unreadCount.value = 0
       }
       
-      console.log('Unread count value set to:', unreadCount.value)
-    } catch (err) {
+
+    } catch {
       error.value = 'Failed to fetch unread count'
-      console.error('Error in fetchUnreadCount:', err)
       unreadCount.value = 0 // Set default value on error
     } finally {
       loading.value = false
