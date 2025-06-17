@@ -31,6 +31,11 @@ const router = createRouter({
       component: () => import('../views/DashboardView.vue'),
     },
     {
+      path: '/notifications',
+      name: 'notifications',
+      component: () => import('../views/Notifications.vue'),
+    },
+    {
       path: '/dashboard/technician',
       name: 'dashboard-technician',
       component: () => import('../views/DashboardTechnician.vue'),
