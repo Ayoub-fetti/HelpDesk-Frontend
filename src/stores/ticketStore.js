@@ -185,7 +185,8 @@ export const useTicketStore = defineStore('tickets', () => {
   }
 
   const resolveTicket = async (id, data) => {
-    try {
+    try {ç
+      
       loading.value = true
       error.value = null
       

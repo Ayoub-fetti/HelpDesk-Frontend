@@ -369,7 +369,7 @@ const handleResolveTicket = async () => {
                         @click="openResolveModal(ticket.id)"
                         class="text-green-600 hover:text-green-800"
                         title="Résoudre">
-                        <i class="fas fa-check-circle"></i>
+                        <i class="fa-solid fa-clipboard-check"></i>
                       </button>
 
                       <!-- Close -->
@@ -377,7 +377,7 @@ const handleResolveTicket = async () => {
                         @click="closeTicket(ticket.id)"
                         class="text-red-600 hover:text-red-800"
                         title="Fermer">
-                        <i class="fas fa-times-circle"></i>
+                        <i class="fa-solid fa-lock"></i>
                       </button>
                     </div>
                   </td>
@@ -390,21 +390,23 @@ const handleResolveTicket = async () => {
     </div>
 
     <!-- Status Change Modal -->
-    <div v-if="showStatusModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-      <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+    <div v-if="showStatusModal" class="fixed inset-0 bg-white/30 backdrop-blur-sm overflow-y-auto h-full w-full flex items-center justify-center z-50">
+      <div class="relative bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 p-6">
         <h3 class="text-lg font-medium text-gray-900 mb-4">Changer le statut</h3>
         <div class="space-y-2">
           <button 
             @click="handleStatusChange('in_progress')"
             class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
             :disabled="isProcessing">
-            <i class="fas fa-spinner mr-2"></i>En cours
+            <i class="fas fa-spinner mr-2"></i>
+            En cours
           </button>
           <button 
             @click="handleStatusChange('on_hold')"
             class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
             :disabled="isProcessing">
-            <i class="fas fa-pause mr-2"></i>En attente
+            <i class="fas fa-pause mr-2"></i>
+            En attente
           </button>
         </div>
         <div class="mt-6 flex justify-end gap-3">
@@ -412,6 +414,7 @@ const handleResolveTicket = async () => {
             @click="showStatusModal = false"
             class="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200"
             :disabled="isProcessing">
+            <i v-if="isProcessing" class="fas fa-spinner fa-spin mr-2"></i>
             Annuler
           </button>
         </div>
@@ -419,8 +422,8 @@ const handleResolveTicket = async () => {
     </div>
 
     <!-- Resolve Modal -->
-    <div v-if="showResolveModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-      <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+    <div v-if="showResolveModal" class="fixed inset-0 bg-white/30 backdrop-blur-sm  overflow-y-auto h-full w-full flex items-center justify-center z-50">
+      <div class="relative bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 p-6">
         <h3 class="text-lg font-medium text-gray-900 mb-4">Résoudre le ticket</h3>
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">Solution</label>
