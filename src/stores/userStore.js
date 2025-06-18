@@ -105,7 +105,7 @@ const login = async (credentials) => {
             isAuthenticated.value = false
             isAdmin.value = false
             loading.value = false
-            router.push({name: 'login'})
+            router.push({name: 'home'})
         }
     }
 
