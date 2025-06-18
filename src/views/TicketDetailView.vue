@@ -143,13 +143,11 @@ const fetchTimeTracking = async () => {
       startTimeUpdateInterval()
     } else {
       // Get the last completed tracking session
-      const lastTracking = [...response].sort((a, b) => 
-        new Date(b.end_date) - new Date(a.end_date)
-      )[0]
+      const lastTracking = response[response.length - 1]
       
-      if (lastTracking && typeof lastTracking.duration === 'number') {
-        // Convert duration from hours (0.02) to seconds (72)
-        elapsedTime.value = Math.round(lastTracking.duration * 3600)
+      if (lastTracking && lastTracking.duration) {
+        // Convert stored duration (hours) to seconds
+        elapsedTime.value = Math.floor(lastTracking.duration * 3600)
       } else {
         elapsedTime.value = 0
       }
@@ -224,24 +222,31 @@ const stopTimeTracking = async () => {
 // Fetch user details for a comment author
 const fetchCommentAuthor = async (authorId) => {
   try {
-    // Check if we already have cached data
     if (!commentUsers.value[authorId]) {
-      // Simulate user data lookup or make API call to get user info
-      // This is where you'd make an API call to fetch user details
-      
-      // For now, we'll check if the author is the current ticket creator or technician
       if (ticketStore.currentTicket) {
         if (ticketStore.currentTicket.user && ticketStore.currentTicket.user.id === authorId) {
-          commentUsers.value[authorId] = ticketStore.currentTicket.user
+          commentUsers.value[authorId] = {
+            firstName: ticketStore.currentTicket.user.firstName,
+            lastName: ticketStore.currentTicket.user.lastName,
+            user_type: ticketStore.currentTicket.user.user_type // Make sure to include user_type
+          }
         } else if (ticketStore.currentTicket.technician && ticketStore.currentTicket.technician.id === authorId) {
-          commentUsers.value[authorId] = ticketStore.currentTicket.technician
+          commentUsers.value[authorId] = {
+            firstName: ticketStore.currentTicket.technician.firstName,
+            lastName: ticketStore.currentTicket.technician.lastName,
+            user_type: ticketStore.currentTicket.technician.user_type // Make sure to include user_type
+          }
         } else if (currentUser.value && currentUser.value.id === authorId) {
-          commentUsers.value[authorId] = currentUser.value
+          commentUsers.value[authorId] = {
+            firstName: currentUser.value.firstName,
+            lastName: currentUser.value.lastName,
+            user_type: currentUser.value.user_type // Make sure to include user_type
+          }
         } else {
-          // Default fallback if user details can't be found
           commentUsers.value[authorId] = {
             firstName: 'Utilisateur',
-            lastName: '#' + authorId
+            lastName: '#' + authorId,
+            user_type: 'final_user' // Set default user type
           }
         }
       }
@@ -249,7 +254,7 @@ const fetchCommentAuthor = async (authorId) => {
     return commentUsers.value[authorId]
   } catch (error) {
     console.error('Failed to fetch user details:', error)
-    return { firstName: 'Utilisateur', lastName: '#' + authorId }
+    return { firstName: 'Utilisateur', lastName: '#' + authorId, user_type: 'final_user' }
   }
 }
 
@@ -282,12 +287,12 @@ const submitComment = async () => {
     
     await ticketStore.addComment(ticketId.value, {
       content: newComment.value,
-      is_private: isPrivateComment.value
+      is_private: isPrivateComment.value ? 1 : 0 // Convertit le booléen en 0 ou 1
     })
     
     // Clear input and refresh comments
     newComment.value = ''
-    isPrivateComment.value = false
+    isPrivateComment.value = false // Reset the checkbox
     await fetchComments()
     
   } catch (error) {
@@ -324,274 +329,203 @@ onUnmounted(() => {
 
 // Get comment author
 const getCommentAuthor = (comment) => {
-  return commentUsers.value[comment.author_id] || { firstName: 'Utilisateur', lastName: '' }
+  const defaultUser = { firstName: 'Utilisateur', lastName: '', user_type: 'final_user' }
+  const user = commentUsers.value[comment.author_id]
+  if (!user) return defaultUser
+
+  // Map user_type to French labels
+  const userTypeLabels = {
+    administrator: 'Administrateur',
+    supervisor: 'Superviseur',
+    technician: 'Technicien',
+    final_user: 'Utilisateur'
+  }
+
+  return {
+    firstName: user.firstName,
+    lastName: user.lastName,
+    userType: userTypeLabels[user.user_type] || 'Utilisateur'
+  }
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <Navbar/>
+  <div class="bg-gradient-to-b from-[#0B1F63] to-[#0B1F63]/80 min-h-screen">
+    <Navbar />
     
-    <div class="max-w-7xl mx-auto pt-10 pb-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Loading state -->
-      <div v-if="isLoading" class="flex justify-center py-10">
-        <div class="text-gray-500">Chargement des détails du ticket...</div>
+      <div v-if="isLoading" class="lg:col-span-3 flex justify-center py-10">
+        <div class="text-white">Chargement des détails du ticket...</div>
       </div>
       
-      <!-- Error state -->
-      <div v-else-if="ticketStore.error" class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-        <p class="text-red-700">{{ ticketStore.error }}</p>
-      </div>
-      
-      <!-- Ticket details -->
-      <div v-else-if="ticketStore.currentTicket" class="bg-white shadow-md rounded-lg overflow-hidden">
-        <!-- Ticket header -->
-        <div class="border-b p-6">
-          <div class="flex justify-between items-start">
-            <div>
-              <h1 class="text-2xl font-semibold text-gray-800 mb-2">
-                {{ ticketStore.currentTicket.title }}
-              </h1>
-              <div class="flex items-center gap-3 text-sm text-gray-500">
-                <span>Ticket #{{ ticketStore.currentTicket.id }}</span>
-                <span>•</span>
-                <span>Créé le {{ formatDate(ticketStore.currentTicket.created_at) }}</span>
+      <template v-else-if="ticketStore.currentTicket">
+        <!-- Main Ticket Panel -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Ticket Details -->
+          <div class="bg-white rounded-2xl shadow p-6">
+            <div class="flex justify-between items-center">
+              <div>
+                <h1 class="text-lg font-semibold text-gray-700">
+                  Ticket <span class="text-blue-600 font-bold">#{{ ticketStore.currentTicket.id.toString().padStart(3, '0') }}</span>
+                </h1>
+                <p class="text-sm text-gray-500">Créé le {{ formatDate(ticketStore.currentTicket.created_at) }}</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span :class="[
+                  getPriorityBadgeClass(ticketStore.currentTicket.priority),
+                  'text-xs font-semibold px-2 py-1 rounded-full'
+                ]">
+                  {{ formatPriority(ticketStore.currentTicket.priority) }}
+                </span>
+                <div v-if="isStaff" class="text-right">
+                  <p class="text-sm font-medium">Temps écoulé</p>
+                  <p class="text-rose-600 text-lg font-bold">{{ formatDuration(elapsedTime) }}</p>
+                </div>
               </div>
             </div>
-            
-            <div class="flex gap-2">
-              <span 
-                :class="[getStatusBadgeClass(ticketStore.currentTicket.statut), 'px-3 py-1 rounded-full text-sm']"
-              >
-                {{ formatStatus(ticketStore.currentTicket.statut) }}
-              </span>
-              <span 
-                :class="[getPriorityBadgeClass(ticketStore.currentTicket.priority), 'px-3 py-1 rounded-full text-sm']"
-              >
-                {{ formatPriority(ticketStore.currentTicket.priority) }}
-              </span>
+
+            <div class="mt-4">
+              <h2 class="text-xl font-bold mb-2">{{ ticketStore.currentTicket.title }}</h2>
+              <div class="flex items-center gap-2 text-sm text-gray-500">
+                <span class="font-medium text-gray-700">{{ ticketStore.currentTicket.user?.firstName }} {{ ticketStore.currentTicket.user?.lastName }}</span> 
+                · {{ ticketStore.currentTicket.user?.email }}
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mt-6">
+              <h3 class="font-semibold mb-2">Description du problème</h3>
+              <p class="text-sm text-gray-600 whitespace-pre-line">{{ ticketStore.currentTicket.description }}</p>
+            </div>
+
+            <!-- Attachments -->
+            <div class="mt-6" v-if="ticketStore.currentTicket.attachments?.length">
+              <h3 class="font-semibold mb-2">Pièces jointes ({{ ticketStore.currentTicket.attachments.length }})</h3>
+              <div class="flex flex-col gap-2">
+                <div v-for="attachment in ticketStore.currentTicket.attachments" 
+                     :key="attachment.id" 
+                     class="flex items-center gap-2 p-2 bg-gray-100 rounded-lg">
+                  <div class="bg-blue-500 text-white px-2 py-1 rounded">📄</div>
+                  <a :href="`http://localhost:8000/storage/${attachment.path}`" 
+                     target="_blank" 
+                     class="text-sm font-medium hover:text-blue-600">
+                    {{ attachment.original_name || attachment.name }}
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <!-- Ticket body -->
-        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- Left column: Details -->
-          <div class="md:col-span-2">
-            <div class="bg-gray-50 p-6 rounded-lg mb-6">
-              <h2 class="text-lg font-medium text-gray-800 mb-4">Description</h2>
-              <p class="text-gray-700 whitespace-pre-line">{{ ticketStore.currentTicket.description }}</p>
-            </div>
+
+          <!-- Conversation -->
+          <div class="bg-white rounded-2xl shadow p-6">
+            <h3 class="font-semibold text-lg mb-4">
+              Conversation ({{ comments.length }} messages)
+            </h3>
             
-            <!-- Attachments section -->
-            <div class="bg-gray-50 p-6 rounded-lg mb-6">
-              <h2 class="text-lg font-medium text-gray-800 mb-4">Pièces jointes</h2>
-              
-              <div v-if="ticketStore.currentTicket.attachments && ticketStore.currentTicket.attachments.length > 0">
-                <ul class="space-y-2">
-                  <li v-for="(attachment, index) in ticketStore.currentTicket.attachments" :key="index" class="flex items-center gap-2 p-2 border rounded-md bg-white">
-                    <i class="fas fa-paperclip text-gray-400"></i>
-                    <a 
-                      :href="`http://localhost:8000/storage/${attachment.path}`" 
-                      target="_blank" 
-                      class="text-blue-600 hover:underline"
-                    >
-                      {{ attachment.original_name || attachment.name }}
-                    </a>
-                  </li>
-                </ul>
-              </div>
-              
-              <div v-else class="text-gray-500 italic">
-                Aucune pièce jointe pour ce ticket
+            <!-- Comments list -->
+            <div class="space-y-4 mb-6">
+              <div v-for="comment in comments" 
+                   :key="comment.id"
+                   :class="[
+                     'p-4 rounded-lg',
+                     comment.is_private ? 'bg-yellow-50' : 'bg-gray-100'
+                   ]">
+                <div class="flex justify-between items-start mb-2">
+                  <p>
+                    <span :class="[
+                      'font-semibold',
+                      comment.is_private ? 'text-yellow-800' : 'text-gray-900'
+                    ]">
+                      {{ getCommentAuthor(comment).firstName }} {{ getCommentAuthor(comment).lastName }}
+                    </span>
+                        <span v-if="getCommentAuthor(comment).userType" class="ml-2 text-xs px-2 py-0.5 bg-gray-200 text-gray-700 rounded-full">
+                        {{ getCommentAuthor(comment).userType }}
+                    </span>
+                    <span class="text-xs ml-2">
+                       {{ formatDate(comment.created_at) }}
+                      
+                    </span>
+                  </p>
+                </div>
+                <p class="text-sm text-gray-600">{{ comment.content }}</p>
               </div>
             </div>
-            
-            <!-- Comments section -->
-            <div class="bg-gray-50 p-6 rounded-lg">
-              <h2 class="text-lg font-medium text-gray-800 mb-4">Conversation</h2>
-              
-              <!-- Comments loading state -->
-              <div v-if="loadingComments" class="py-4 text-center text-gray-500">
-                <i class="fas fa-circle-notch fa-spin mr-2"></i>
-                Chargement des commentaires...
-              </div>
-              
-              <!-- No comments state -->
-              <div v-else-if="!comments.length" class="py-4 text-center text-gray-500">
-                <p>Aucun commentaire pour le moment</p>
-              </div>
-              
-              <!-- Comments list -->
-              <div v-else class="space-y-4 mb-6">
-                <div 
-                  v-for="comment in comments" 
-                  :key="comment.id" 
-                  :class="[
-                    'p-4 rounded-lg', 
-                    comment.is_private ? 'bg-yellow-50 border border-yellow-100' : 'bg-white border border-gray-100'
-                  ]"
+
+            <!-- New comment form -->
+            <div class="mt-4">
+              <textarea
+                v-model="newComment"
+                rows="3"
+                class="w-full p-3 border rounded-lg resize-none"
+                placeholder="Tapez votre réponse..."
+              ></textarea>
+              <div class="mt-2 flex items-center justify-between">
+                <!-- Ajout de la case à cocher pour les commentaires privés, visible uniquement pour les techniciens et admins -->
+                <div v-if="isStaff" class="flex items-center">
+                  <input type="checkbox" 
+                         id="is-private" 
+                         v-model="isPrivateComment"
+                         class="rounded border-gray-300" />
+                  <label for="is-private" class="ml-2 text-sm text-gray-600">
+                    Commentaire privé
+                  </label>
+                </div>
+                <button
+                  @click="submitComment"
+                  :disabled="submittingComment || !newComment.trim()"
+                  class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                 >
-                  <div class="flex justify-between items-start mb-2">
-                    <div class="flex items-center">
-                      <div class="font-medium text-gray-800">
-                        {{ getCommentAuthor(comment).firstName }} {{ getCommentAuthor(comment).lastName }}
-                      </div>
-                      <span v-if="comment.is_private" class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                        <i class="fas fa-lock text-xs mr-1"></i>
-                        Privé
-                      </span>
-                    </div>
-                    <div class="text-xs text-gray-500">
-                      {{ formatDate(comment.created_at) }}
-                    </div>
-                  </div>
-                  <p class="text-gray-700">{{ comment.content }}</p>
-                </div>
-              </div>
-              
-              <!-- New comment form -->
-              <form @submit.prevent="submitComment" class="mt-4">
-                <textarea
-                  v-model="newComment"
-                  rows="3"
-                  placeholder="Ajouter un commentaire..."
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                ></textarea>
-                
-                <div class="mt-2 flex items-center justify-between">
-                  <div class="flex items-center" v-if="isAdmin">
-                    <input 
-                      id="is-private" 
-                      type="checkbox" 
-                      v-model="isPrivateComment" 
-                      class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label for="is-private" class="ml-2 text-sm text-gray-700">
-                      Commentaire privé (visible uniquement par l'équipe technique)
-                    </label>
-                  </div>
-                  
-                  <button 
-                    type="submit" 
-                    :disabled="submittingComment || !newComment.trim()" 
-                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center"
-                  >
-                    <i v-if="submittingComment" class="fas fa-circle-notch fa-spin mr-2"></i>
-                    {{ submittingComment ? 'Envoi...' : 'Envoyer' }}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-          
-          <!-- Right column: Meta information -->
-          <div>
-            <div class="bg-gray-50 p-6 rounded-lg">
-              <h2 class="text-lg font-medium text-gray-800 mb-4">Informations</h2>
-              
-              <dl class="space-y-3">
-                <div class="flex justify-between">
-                  <dt class="text-sm font-medium text-gray-500">Catégorie</dt>
-                  <dd class="text-sm text-gray-900">{{ ticketStore.currentTicket.category?.name || '-' }}</dd>
-                </div>
-                
-                <div class="flex justify-between">
-                  <dt class="text-sm font-medium text-gray-500">Demandeur</dt>
-                  <dd class="text-sm text-gray-900">
-                    {{ ticketStore.currentTicket.user?.firstName }} {{ ticketStore.currentTicket.user?.lastName }}
-                  </dd>
-                </div>
-                
-                <div class="flex justify-between">
-                  <dt class="text-sm font-medium text-gray-500">Email</dt>
-                  <dd class="text-sm text-gray-900">{{ ticketStore.currentTicket.user?.email || '-' }}</dd>
-                </div>
-                
-                <div class="flex justify-between">
-                  <dt class="text-sm font-medium text-gray-500">Technicien</dt>
-                  <dd class="text-sm text-gray-900">
-                    <span v-if="ticketStore.currentTicket.technician">
-                      {{ ticketStore.currentTicket.technician.firstName }} {{ ticketStore.currentTicket.technician.lastName }}
-                    </span>
-                    <span v-else>Non assigné</span>
-                  </dd>
-                </div>
-                
-                <div class="flex justify-between">
-                  <dt class="text-sm font-medium text-gray-500">Mis à jour</dt>
-                  <dd class="text-sm text-gray-900">{{ formatDate(ticketStore.currentTicket.updated_at) }}</dd>
-                </div>
-              </dl>
-            </div>
-            
-            <!-- Time Tracking section - Only visible to staff users -->
-            <div v-if="isStaff" class="bg-gray-50 p-6 rounded-lg mt-4">
-              <h2 class="text-lg font-medium text-gray-800 mb-4">
-                <i class="fas fa-clock mr-2 text-blue-600"></i>
-                Suivi de temps
-              </h2>
-              
-              <!-- Loading state -->
-              <div v-if="isTimeTrackingLoading" class="flex justify-center py-4">
-                <div class="text-gray-500">
-                  <i class="fas fa-circle-notch fa-spin mr-2"></i>
-                  Chargement...
-                </div>
-              </div>
-              
-              <!-- Time tracking content -->
-              <div v-else class="space-y-4">
-                <!-- Time counter -->
-                <div class="bg-white border border-gray-200 rounded-lg p-4 text-center">
-                  <div class="text-3xl font-mono">{{ formatDuration(elapsedTime) }}</div>
-                  <div class="text-xs text-gray-500 mt-1">Heures : Minutes : Secondes</div>
-                </div>
-                
-                <!-- Start/Stop buttons -->
-                <div class="flex justify-center space-x-3">
-                  <button 
-                    v-if="!isTimeRunning" 
-                    @click="startTimeTracking" 
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                  >
-                    <i class="fas fa-play mr-2"></i>
-                    Démarrer
-                  </button>
-                  
-                  <button 
-                    v-else 
-                    @click="stopTimeTracking" 
-                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                  >
-                    <i class="fas fa-stop mr-2"></i>
-                    Arrêter
-                  </button>
-                </div>
-                
-                <!-- Status indicator -->
-                <div class="text-center text-sm">
-                  <span v-if="isTimeRunning" class="text-green-600 flex items-center justify-center">
-                    <span class="relative flex h-3 w-3 mr-2">
-                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                    </span>
-                    Temps en cours d'enregistrement
-                  </span>
-                  <span v-else class="text-gray-500">
-                    Temps total enregistré: {{ formatDuration(elapsedTime) }}
-                  </span>
-                </div>
+                  {{ submittingComment ? 'Envoi...' : 'Envoyer' }}
+                </button>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      <!-- No ticket found state -->
-      <div v-else class="bg-white p-6 rounded-lg shadow text-center">
-        <p class="text-gray-500">Ce ticket n'existe pas ou a été supprimé.</p>
-      </div>
+
+        <!-- Right Side Panel -->
+        <div class="space-y-6">
+          <!-- Info Card -->
+          <div class="bg-white rounded-2xl shadow p-6">
+            <h3 class="font-semibold text-lg mb-4">Informations</h3>
+            <div class="space-y-2 text-sm text-gray-700">
+              <p>
+                <span class="font-semibold">Statut:</span>
+                <span :class="[getStatusBadgeClass(ticketStore.currentTicket.statut), 'ml-2 px-2 py-1 rounded-full text-xs']">
+                  {{ formatStatus(ticketStore.currentTicket.statut) }}
+                </span>
+              </p>
+              <p><span class="font-semibold">Priorité:</span> {{ formatPriority(ticketStore.currentTicket.priority) }}</p>
+              <p><span class="font-semibold">Catégorie:</span> {{ ticketStore.currentTicket.category?.name }}</p>
+              <p><span class="font-semibold">Assigné à:</span> {{ ticketStore.currentTicket.technician?.firstName }} {{ ticketStore.currentTicket.technician?.lastName }}</p>
+              <p><span class="font-semibold">Créé le:</span> {{ formatDate(ticketStore.currentTicket.created_at) }}</p>
+              <p><span class="font-semibold">Dernière MAJ:</span> {{ formatDate(ticketStore.currentTicket.updated_at) }}</p>
+            </div>
+          </div>
+
+          <!-- Time Tracking Card -->
+          <div v-if="isStaff" class="bg-white rounded-2xl shadow p-6">
+            <h3 class="font-semibold text-lg mb-4">Suivi du temps</h3>
+            <div class="text-center">
+              <div class="text-3xl font-bold mb-4">{{ formatDuration(elapsedTime) }}</div>
+              <button
+                v-if="!isTimeRunning"
+                @click="startTimeTracking"
+                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+              >
+                Démarrer le chrono
+              </button>
+              <button
+                v-else
+                @click="stopTimeTracking"
+                class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+              >
+                Arrêter
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
   </div>
 </template>
