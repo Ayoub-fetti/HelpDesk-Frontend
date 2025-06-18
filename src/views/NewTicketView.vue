@@ -62,10 +62,8 @@ const submitTicket = async () => {
 
     await ticketStore.createTicket(formData)
     submitSuccess.value = true
+    router.push('/dashboard')
 
-    setTimeout(() => {
-      router.push('/dashboard')
-    }, 1000)
 
   } catch (error) {
     if (error.response?.status === 422) {

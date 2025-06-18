@@ -31,30 +31,44 @@ export const useUserStore = defineStore('user', () => {
     }
 
     // login user 
-    const login = async (credentials) => {
-        try {
-            loading.value = true
-            error.value = null
-            
-            // Login with AuthService
-            await AuthService.login(credentials)
-            
-            // get user data
-            await checkAuth()
-            
-            if (isAuthenticated.value) {
-                router.push({ name: 'dashboard'})
-            } else {
-                error.value = 'Authentication failed'
-            }
-        } catch (err) {
-            error.value = err.response?.data?.message || 'Login failed'
-            user.value = null
-            isAuthenticated.value = false
-        } finally {
-            loading.value = false
-        }
+const login = async (credentials) => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    // Login with AuthService
+    await AuthService.login(credentials)
+    
+    // get user data 
+    await checkAuth()
+    
+    if (isAuthenticated.value && user.value) {
+      // Redirect based on user role
+      switch (user.value.user_type) {
+        case 'administrator':
+          router.push({ name: 'admin' })
+          break
+        case 'supervisor':
+          router.push({ name: 'dashboard-supervisor' })
+          break
+        case 'technician': 
+          router.push({ name: 'dashboard-technician' })
+          break
+        default:
+          router.push({ name: 'dashboard' })
+          break
+      }
+    } else {
+      error.value = 'Authentication failed'
     }
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Login failed'
+    user.value = null
+    isAuthenticated.value = false
+  } finally {
+    loading.value = false
+  }
+}
 
     // register user 
     const register = async (userData) => {
