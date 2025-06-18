@@ -126,7 +126,7 @@ export const useTicketStore = defineStore('tickets', () => {
       loading.value = false
     }
   }
-    const getTimeTracking = async (ticketId) => {
+  const getTimeTracking = async (ticketId) => {
     try {
       loading.value = true
       error.value = null
@@ -140,7 +140,7 @@ export const useTicketStore = defineStore('tickets', () => {
       loading.value = false
     }
   }
-    const startTimeTracking = async (ticketId) => {
+  const startTimeTracking = async (ticketId) => {
     try {
       loading.value = true
       error.value = null
@@ -154,7 +154,7 @@ export const useTicketStore = defineStore('tickets', () => {
       loading.value = false
     }
   }
-    const stopTimeTracking = async (ticketId) => {
+  const stopTimeTracking = async (ticketId) => {
     try {
       loading.value = true
       error.value = null
@@ -168,6 +168,53 @@ export const useTicketStore = defineStore('tickets', () => {
       loading.value = false
     }
   }
+  
+  const closeTicket = async (id) => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      const response = await ticketService.closeTicket(id)
+      return response
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to close ticket'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const resolveTicket = async (id, data) => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      const response = await ticketService.resolveTicket(id, data)
+      return response
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to resolve ticket'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+const changeStatus = async (ticketId, statut) => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await ticketService.changeStatus(ticketId, statut)
+    // Refresh tickets list after successful status change
+    await fetchTickets()
+    return response
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Failed to change status'
+    throw err
+  } finally {
+    loading.value = false
+  }
+}
 
   return {
     tickets,
@@ -183,6 +230,9 @@ export const useTicketStore = defineStore('tickets', () => {
     fetchComments,
     getTimeTracking,
     startTimeTracking,
-    stopTimeTracking
+    stopTimeTracking,
+    closeTicket,
+    resolveTicket,
+    changeStatus
   }
 })

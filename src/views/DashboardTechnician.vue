@@ -127,6 +127,77 @@ const formatPriority = (priority) => {
   }
   return priorityLabels[priority] || priority
 }
+const changeTicketStatus = async (ticketId, newStatus) => {
+  try {
+    isProcessing.value = true
+    await ticketStore.changeStatus(ticketId, newStatus)
+    showStatusModal.value = false
+  } catch (error) {
+    console.error('Failed to change ticket status:', error)
+  } finally {
+    isProcessing.value = false
+  }
+}
+const closeTicket = async (ticketId) => {
+  try {
+    await ticketStore.closeTicket(ticketId)
+    await ticketStore.fetchTickets()
+  } catch (error) {
+    console.error('Failed to close ticket:', error)
+  }
+}
+const resolveTicket = async (ticketId) => {
+  try {
+    await ticketStore.resolveTicket(ticketId)
+    await ticketStore.fetchTickets()
+  } catch (error) {
+    console.error('Failed to resolve ticket:', error)
+  }
+}
+
+// Add these refs and methods in the script section:
+const showStatusModal = ref(false)
+const showResolveModal = ref(false)
+const selectedTicketId = ref(null)
+const solution = ref('')
+const isProcessing = ref(false)
+
+// Add these methods:
+const openStatusModal = (ticketId) => {
+  selectedTicketId.value = ticketId
+  showStatusModal.value = true
+}
+
+const openResolveModal = (ticketId) => {
+  selectedTicketId.value = ticketId
+  solution.value = ''
+  showResolveModal.value = true
+}
+
+const handleStatusChange = async (newStatus) => {
+  if (!selectedTicketId.value) return
+  await changeTicketStatus(selectedTicketId.value, newStatus)
+}
+
+const handleResolveTicket = async () => {
+  if (!solution.value.trim()) {
+    return
+  }
+  
+  try {
+    isProcessing.value = true
+    await ticketStore.resolveTicket(selectedTicketId.value, {
+      solution: solution.value
+    })
+    await ticketStore.fetchTickets()
+    showResolveModal.value = false
+  } catch (error) {
+    console.error('Failed to resolve ticket:', error)
+  } finally {
+    isProcessing.value = false
+  }
+}
+
 </script>
 
 <template>
@@ -276,9 +347,39 @@ const formatPriority = (priority) => {
                   <td class="p-3">{{ ticket.user?.firstName }} {{ ticket.user?.lastName }}</td>
                   <td class="p-3">{{ formatDate(ticket.created_at) }}</td>
                   <td class="p-3">
-                    <RouterLink :to="`/ticket/${ticket.id}`" class="text-blue-600 hover:text-blue-800">
-                      <i class="fas fa-eye ml-4"></i>
-                    </RouterLink>
+                    <div class="flex items-center gap-3">
+                      <!-- View ticket -->
+                      <RouterLink 
+                        :to="`/ticket/${ticket.id}`" 
+                        class="text-blue-600 hover:text-blue-800"
+                        title="Voir le ticket">
+                        <i class="fas fa-eye"></i>
+                      </RouterLink>
+
+                      <!-- Change Status -->
+                      <button 
+                        @click="openStatusModal(ticket.id)"
+                        class="text-indigo-600 hover:text-indigo-800"
+                        title="Changer le statut">
+                        <i class="fas fa-exchange-alt"></i>
+                      </button>
+
+                      <!-- Resolve -->
+                      <button 
+                        @click="openResolveModal(ticket.id)"
+                        class="text-green-600 hover:text-green-800"
+                        title="Résoudre">
+                        <i class="fas fa-check-circle"></i>
+                      </button>
+
+                      <!-- Close -->
+                      <button 
+                        @click="closeTicket(ticket.id)"
+                        class="text-red-600 hover:text-red-800"
+                        title="Fermer">
+                        <i class="fas fa-times-circle"></i>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -287,5 +388,75 @@ const formatPriority = (priority) => {
         </div>
       </div>
     </div>
+
+    <!-- Status Change Modal -->
+    <div v-if="showStatusModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+      <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Changer le statut</h3>
+        <div class="space-y-2">
+          <button 
+            @click="handleStatusChange('in_progress')"
+            class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+            :disabled="isProcessing">
+            <i class="fas fa-spinner mr-2"></i>En cours
+          </button>
+          <button 
+            @click="handleStatusChange('on_hold')"
+            class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+            :disabled="isProcessing">
+            <i class="fas fa-pause mr-2"></i>En attente
+          </button>
+        </div>
+        <div class="mt-6 flex justify-end gap-3">
+          <button 
+            @click="showStatusModal = false"
+            class="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200"
+            :disabled="isProcessing">
+            Annuler
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resolve Modal -->
+    <div v-if="showResolveModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+      <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Résoudre le ticket</h3>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Solution</label>
+          <textarea
+            v-model="solution"
+            rows="4"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Décrivez la solution apportée..."
+            required
+          ></textarea>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button 
+            @click="showResolveModal = false"
+            class="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200"
+            :disabled="isProcessing">
+            Annuler
+          </button>
+          <button 
+            @click="handleResolveTicket"
+            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
+            :disabled="isProcessing || !solution.trim()">
+            <i v-if="isProcessing" class="fas fa-spinner fa-spin mr-2"></i>
+            Résoudre
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
+
+ 
 </template>
+
+
+ <style scoped>
+.relative:focus-within > .hidden {
+  display: block;
+}
+</style>
