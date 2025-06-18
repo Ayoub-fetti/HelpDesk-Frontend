@@ -32,6 +32,23 @@ const isStaff = computed(() => {
   return userType === 'administrator' || userType === 'supervisor' || userType === 'technician'
 })
 
+// Helper functions to determine file type
+const isImageFile = (filename) => {
+  if (!filename) return false
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg']
+  return imageExtensions.some(ext => 
+    filename.toLowerCase().endsWith(ext)
+  )
+}
+
+const isVideoFile = (filename) => {
+  if (!filename) return false
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi']
+  return videoExtensions.some(ext => 
+    filename.toLowerCase().endsWith(ext)
+  )
+}
+
 // Format date helper
 const formatDate = (dateString) => {
   if (!dateString) return '-'
@@ -382,40 +399,53 @@ const getCommentAuthor = (comment) => {
                   <p class="text-sm font-medium">Temps écoulé</p>
                   <p class="text-rose-600 text-lg font-bold">{{ formatDuration(elapsedTime) }}</p>
                 </div>
+                <div class="flex items-center gap-2 text-sm text-gray-500">
+                <span class="font-medium text-gray-700">{{ ticketStore.currentTicket.user?.firstName }} {{ ticketStore.currentTicket.user?.lastName }}</span> 
+                · ({{ ticketStore.currentTicket.user?.email }})
+              </div>
               </div>
             </div>
 
             <div class="mt-4">
-              <h2 class="text-xl font-bold mb-2">{{ ticketStore.currentTicket.title }}</h2>
-              <div class="flex items-center gap-2 text-sm text-gray-500">
-                <span class="font-medium text-gray-700">{{ ticketStore.currentTicket.user?.firstName }} {{ ticketStore.currentTicket.user?.lastName }}</span> 
-                · {{ ticketStore.currentTicket.user?.email }}
-              </div>
+
+              <h2 class="text-xl font-bold mb-2 text-blue-700">{{ ticketStore.currentTicket.title }}</h2>
             </div>
 
             <!-- Description -->
             <div class="mt-6">
-              <h3 class="font-semibold mb-2">Description du problème</h3>
+              <h3 class="font-semibold mb-2 text-blue-700">Description du problème</h3>
               <p class="text-sm text-gray-600 whitespace-pre-line">{{ ticketStore.currentTicket.description }}</p>
             </div>
 
             <!-- Attachments -->
             <div class="mt-6" v-if="ticketStore.currentTicket.attachments?.length">
-              <h3 class="font-semibold mb-2">Pièces jointes ({{ ticketStore.currentTicket.attachments.length }})</h3>
+              <h3 class="font-semibold mb-2 text-blue-700">Pièces jointes ({{ ticketStore.currentTicket.attachments.length }})</h3>
               <div class="flex flex-col gap-2">
                 <div v-for="attachment in ticketStore.currentTicket.attachments" 
-                     :key="attachment.id" 
-                     class="flex items-center gap-2 p-2 bg-gray-100 rounded-lg">
-                  <div class="bg-blue-500 text-white px-2 py-1 rounded">📄</div>
-                  <a :href="`http://localhost:8000/storage/${attachment.path}`" 
-                     target="_blank" 
-                     class="text-sm font-medium hover:text-blue-600">
-                    {{ attachment.original_name || attachment.name }}
+                    :key="attachment.id" 
+                    class="flex items-center gap-2 p-2 bg-gray-100 rounded-lg w-60">
+                  <a :href="`http://localhost:8000/storage/${attachment.file_path}`" 
+                    target="_blank">
+                    <!-- Image files -->
+                    <i v-if="isImageFile(attachment.file_name || attachment.name)" 
+                     class="fas fa-images text-xl text-blue-500 hover:text-blue-300"></i>
+                    <!-- Video files -->
+                    <i v-else-if="isVideoFile(attachment.file_name || attachment.name)" 
+                    class="fas fa-video text-xl text-orange-500 hover:text-orange-300"></i>
+                    <!-- Document files -->
+                    <i v-else 
+                       class="fa-solid fa-print text-xl text-red-700 hover:text-red-300"></i>
+                  </a>
+                  <a :href="`http://localhost:8000/storage/${attachment.file_path}`" 
+                    target="_blank" 
+                    class="text-sm font-medium hover:text-blue-600">
+                    {{ attachment.file_name || attachment.file_name }}
                   </a>
                 </div>
               </div>
             </div>
           </div>
+
 
           <!-- Conversation -->
           <div class="bg-white rounded-2xl shadow p-6">
