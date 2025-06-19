@@ -1,12 +1,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useTicketStore, useUserStore } from '@/stores'
-import { RouterLink } from 'vue-router'
+import { useTicketStore} from '@/stores'
 import Navbar from '@/components/layout/navbar.vue'
 import api from '@/axios'
 
 const ticketStore = useTicketStore()
-const userStore = useUserStore()
 const isLoading = ref(true)
 const showAssignModal = ref(false)
 const selectedTicketId = ref(null)
@@ -103,136 +101,152 @@ const formatDate = (dateString) => {
     year: 'numeric'
   }).format(new Date(dateString))
 }
+
+ const capitalizeName = (name) =>  {
+    return name.split(' ')
+               .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+               .join(' ');
+  }
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 text-gray-800">
     <Navbar />
-    
-    <div class="max-w-7xl mx-auto pt-6 px-4 sm:px-6 lg:px-8">
-      <h1 class="text-2xl font-semibold text-gray-800 mb-6">Tableau de bord superviseur</h1>
-      
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+      <!-- Header -->
+      <h1 class="text-3xl font-bold tracking-tight">Tableau de bord superviseur</h1>
+
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center">
-            <i class="fas fa-clipboard-list text-blue-500 text-4xl"></i>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">Total tickets</p>
-              <p class="mt-1 text-2xl font-semibold">{{ stats.totalTickets }}</p>
-            </div>
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-2xl shadow-md p-6 flex items-center gap-4">
+          <i class="fas fa-clipboard-list text-blue-600 text-4xl"></i>
+          <div>
+            <p class="text-sm font-medium text-gray-500">Total tickets</p>
+            <p class="text-2xl font-semibold">{{ stats.totalTickets }}</p>
           </div>
         </div>
-        
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center">
-            <i class="fas fa-check-circle text-green-500 text-3xl"></i>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">Tickets résolus</p>
-              <p class="mt-1 text-2xl font-semibold">{{ stats.resolvedTickets }}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center">
-            <i class="fas fa-users text-indigo-500 text-3xl"></i>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">Total techniciens</p>
-              <p class="mt-1 text-2xl font-semibold">{{ stats.totalTechnicians }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Team Performance -->
-      <div class="bg-white rounded-lg shadow mb-8">
-        <div class="p-6">
-          <h2 class="text-lg font-semibold mb-4">Performance de l'équipe</h2>
-          <div class="overflow-x-auto">
-            <table class="min-w-full">
-              <thead>
-                <tr class="text-left text-gray-500 border-b">
-                  <th class="pb-3">Technicien</th>
-                  <th class="pb-3">Total tickets</th>
-                  <th class="pb-3">Tickets résolus</th>
-                  <th class="pb-3">Tickets assignés</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="tech in techniciansPerformance" :key="tech.id" class="border-b">
-                  <td class="py-3">{{ tech.firstName }} {{ tech.lastName }}</td>
-                  <td class="py-3">{{ tech.totalTickets }}</td>
-                  <td class="py-3">{{ tech.resolvedTickets }}</td>
-                  <td class="py-3">{{ tech.assignedTickets }}</td>
-                </tr>
-              </tbody>
-            </table>
+        <div class="bg-white rounded-2xl shadow-md p-6 flex items-center gap-4">
+          <i class="fas fa-check-circle text-green-600 text-4xl"></i>
+          <div>
+            <p class="text-sm font-medium text-gray-500">Tickets résolus</p>
+            <p class="text-2xl font-semibold">{{ stats.resolvedTickets }}</p>
           </div>
         </div>
-      </div>
 
-      <!-- New Tickets Section -->
-      <div class="bg-white rounded-lg shadow">
-        <div class="p-6">
-          <h2 class="text-lg font-semibold mb-4">Nouveaux tickets à assigner</h2>
-          <div class="overflow-x-auto">
-            <table class="min-w-full">
-              <thead>
-                <tr class="text-left text-gray-500 border-b">
-                  <th class="pb-3">ID</th>
-                  <th class="pb-3">Titre</th>
-                  <th class="pb-3">Date création</th>
-                  <th class="pb-3">Status</th>
-                  <th class="pb-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="ticket in newTickets" :key="ticket.id" class="border-b">
-                  <td class="py-3">#{{ ticket.id.toString().padStart(3, '0') }}</td>
-                  <td class="py-3">{{ ticket.title }}</td>
-                  <td class="py-3">{{ formatDate(ticket.created_at) }}</td>
-                  <td class="py-3">{{ ticket.statut}}</td>
-                  <td class="py-3">
-                    <button 
-                      @click="openAssignModal(ticket.id)"
-                      class="text-blue-600 hover:text-blue-800 mr-3">
-                      <i class="fas fa-user-plus"></i>
-                    </button>
-                    <button 
-                      v-if="ticket.technician"
-                      @click="removeAssignment(ticket.id)"
-                      class="text-red-600 hover:text-red-800">
-                      <i class="fas fa-user-minus"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+        <div class="bg-white rounded-2xl shadow-md p-6 flex items-center gap-4">
+          <i class="fas fa-users text-indigo-600 text-4xl"></i>
+          <div>
+            <p class="text-sm font-medium text-gray-500">Total techniciens</p>
+            <p class="text-2xl font-semibold">{{ stats.totalTechnicians }}</p>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <!-- Team Performance Table -->
+      <section class="bg-white rounded-2xl shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Performance de l'équipe</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm text-left">
+            <thead class="border-b text-gray-500">
+              <tr>
+                <th class="pb-3">Technicien</th>
+                <th class="pb-3">Total tickets</th>
+                <th class="pb-3">Tickets résolus</th>
+                <th class="pb-3">Tickets assignés</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="tech in techniciansPerformance" :key="tech.id" class="border-b hover:bg-gray-50">
+                <td class="py-3 font-bold">{{capitalizeName( tech.firstName )}} {{capitalizeName( tech.lastName) }}</td>
+                <td class="py-3">{{ tech.totalTickets }}</td>
+                <td class="py-3">{{ tech.resolvedTickets }}</td>
+                <td class="py-3">{{ tech.assignedTickets }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- New Tickets Table -->
+      <section class="bg-white rounded-2xl shadow-md p-6">
+        <h2 class="text-xl font-semibold mb-4">Nouveaux tickets à assigner</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm text-left">
+            <thead class="border-b text-gray-500">
+              <tr>
+                <th class="pb-3">ID</th>
+                <th class="pb-3">Titre</th>
+                <th class="pb-3">Date création</th>
+                <th class="pb-3">Status</th>
+                <th class="pb-3">Technicien</th>
+                <th class="pb-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="ticket in newTickets" :key="ticket.id" class="border-b hover:bg-gray-50">
+                <td class="py-3 font-mono">#{{ ticket.id.toString().padStart(3, '0') }}</td>
+                <td class="py-3">{{ ticket.title }}</td>
+                <td class="py-3">{{ formatDate(ticket.created_at) }}</td>
+                <td class="py-3">
+                    <span 
+                    :class="{
+                        'bg-blue-100 text-blue-700': ticket.statut === 'new',
+                        'bg-orange-100 text-orange-700': ticket.statut === 'assigned'
+                    }"
+                    class="px-3 py-1 rounded-full text-xs font-medium"
+                    >
+                    {{ ticket.statut }}
+                    </span>
+                </td>
+                <td class="py-3 font-bold">
+                  {{ ticket.technician ? capitalizeName(`${ticket.technician.firstName} ${ticket.technician.lastName}`) : '-' }}
+                </td>
+                <td class="py-3 flex gap-3 items-center">
+                  <button
+                    @click="openAssignModal(ticket.id)"
+                    class="text-blue-600 hover:text-blue-800 transition"
+                  >
+                    <i class="fa-solid fa-person-arrow-down-to-line"></i>
+                  </button>
+                  <button
+                    v-if="ticket.technician"
+                    @click="removeAssignment(ticket.id)"
+                    class="text-red-600 hover:text-red-800 transition"
+                  >
+                    <i class="fa-solid fa-person-circle-xmark"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
 
     <!-- Assign Modal -->
-    <div v-if="showAssignModal" class="fixed inset-0  bg-white/30 backdrop-blur-sm overflow-y-auto h-full w-full flex items-center justify-center">
-      <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">Assigner un technicien</h3>
-        <select v-model="selectedTechnicianId" class="w-full p-2 border rounded-md mb-4">
-          <option selected v-for="tech in technicians" :key="tech.id" :value="tech.id">
+    <div v-if="showAssignModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+      <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-4">
+        <h3 class="text-lg font-medium mb-4">Assigner un technicien</h3>
+        <select v-model="selectedTechnicianId" class="w-full px-3 py-2 border rounded-md mb-4">
+          <option disabled value="">Sélectionner un technicien</option>
+          <option v-for="tech in technicians" :key="tech.id" :value="tech.id">
             {{ tech.firstName }} {{ tech.lastName }}
           </option>
         </select>
         <div class="flex justify-end gap-3">
-          <button 
+          <button
             @click="showAssignModal = false"
-            class="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200">
+            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition"
+          >
             Annuler
           </button>
-          <button 
+          <button
             @click="assignTicket"
             :disabled="!selectedTechnicianId"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 " >
+            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+          >
             <i v-if="isProcessing" class="fas fa-spinner fa-spin mr-2"></i>
             Assigner
           </button>
@@ -241,3 +255,4 @@ const formatDate = (dateString) => {
     </div>
   </div>
 </template>
+
