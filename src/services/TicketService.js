@@ -216,4 +216,5 @@ async removeAssignment(ticketId) {
       throw error
     }
   }
+  
 }
