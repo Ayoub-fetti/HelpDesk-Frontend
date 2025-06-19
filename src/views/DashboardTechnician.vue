@@ -395,6 +395,13 @@ const handleResolveTicket = async () => {
         <h3 class="text-lg font-medium text-gray-900 mb-4">Changer le statut</h3>
         <div class="space-y-2">
           <button 
+            @click="handleStatusChange('assigned')"
+            class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+            :disabled="isProcessing">
+            <i class="fas fa-spinner mr-2"></i>
+            Attribué
+          </button>
+          <button 
             @click="handleStatusChange('in_progress')"
             class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
             :disabled="isProcessing">

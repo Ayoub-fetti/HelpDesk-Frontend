@@ -217,6 +217,44 @@ const changeStatus = async (ticketId, statut) => {
   }
 }
 
+const assignTicket = async (ticketId, userId) => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await ticketService.assignTicket(ticketId, userId)
+    
+    // Refresh the current ticket data after assignment
+    await fetchTicket(ticketId)
+    
+    return response
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Failed to assign ticket'
+    throw err
+  } finally {
+    loading.value = false
+  }
+}
+
+const removeAssignment = async (ticketId) => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await ticketService.removeAssignment(ticketId)
+    
+    // Refresh the current ticket data after removing assignment
+    await fetchTicket(ticketId)
+    
+    return response
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Failed to remove ticket assignment'
+    throw err
+  } finally {
+    loading.value = false
+  }
+}
+
   return {
     tickets,
     currentTicket,
@@ -234,6 +272,8 @@ const changeStatus = async (ticketId, statut) => {
     stopTimeTracking,
     closeTicket,
     resolveTicket,
-    changeStatus
+    changeStatus,
+    assignTicket,
+    removeAssignment
   }
 })
