@@ -3,6 +3,8 @@ import { ref, onMounted, computed } from 'vue'
 import { useTicketStore} from '@/stores'
 import Navbar from '@/components/layout/navbar.vue'
 import api from '@/axios'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const ticketStore = useTicketStore()
 const isLoading = ref(true)
@@ -107,15 +109,80 @@ const formatDate = (dateString) => {
                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                .join(' ');
   }
+
+// Add function to generate PDF
+const generatePDF = () => {
+  const doc = new jsPDF()
+  const now = new Date().toLocaleDateString('fr-FR')
+  
+  // Add title
+  doc.setFontSize(18)
+  doc.text('Rapport du tableau de bord superviseur', 14, 20)
+  doc.setFontSize(12)
+  doc.text(`Date: ${now}`, 14, 30)
+  
+  // Add stats section
+  doc.setFontSize(14)
+  doc.text('Statistiques générales', 14, 45)
+  autoTable(doc, {
+    startY: 50,
+    head: [['Métrique', 'Valeur']],
+    body: [
+      ['Total des tickets', stats.value.totalTickets],
+      ['Tickets résolus', stats.value.resolvedTickets],
+      ['Nombre de techniciens', stats.value.totalTechnicians],
+    ],
+  })
+  
+  // Add technicians performance table
+  doc.setFontSize(14)
+  doc.text('Performance des techniciens', 14, doc.lastAutoTable.finalY + 20)
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY + 25,
+    head: [['Technicien', 'Total tickets', 'Tickets résolus', 'Tickets assignés']],
+    body: techniciansPerformance.value.map(tech => [
+      `${tech.firstName} ${tech.lastName}`,
+      tech.totalTickets,
+      tech.resolvedTickets,
+      tech.assignedTickets
+    ]),
+  })
+  
+  // Add new tickets table
+  doc.setFontSize(14)
+  doc.text('Nouveaux tickets à assigner', 14, doc.lastAutoTable.finalY + 20)
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY + 25,
+    head: [['ID', 'Titre', 'Date création', 'Statut', 'Technicien']],
+    body: newTickets.value.map(ticket => [
+      `#${ticket.id.toString().padStart(3, '0')}`,
+      ticket.title,
+      formatDate(ticket.created_at),
+      ticket.statut,
+      ticket.technician ? `${ticket.technician.firstName} ${ticket.technician.lastName}` : '-'
+    ]),
+  })
+
+  // Save PDF
+  doc.save(`rapport-superviseur-${now}.pdf`)
+}
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50 text-gray-800">
     <Navbar />
-
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-      <!-- Header -->
-      <h1 class="text-3xl font-bold tracking-tight">Tableau de bord superviseur</h1>
+      <!-- Header with Export Button -->
+      <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold tracking-tight">Tableau de bord superviseur</h1>
+        <button
+          @click="generatePDF"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+        >
+          <i class="fas fa-file-pdf"></i>
+          Exporter en PDF
+        </button>
+      </div>
 
       <!-- Stats Cards -->
       <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
