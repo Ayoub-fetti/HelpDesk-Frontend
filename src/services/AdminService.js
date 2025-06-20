@@ -1,4 +1,5 @@
 import BaseService from './BaseService'
+import {AuthService} from '@/services'
 
 class AdminService extends BaseService {
   constructor() {
@@ -25,7 +26,18 @@ class AdminService extends BaseService {
   }
   async createUser(data) {
     try {
-      const response = await this.api.post(`${this.getBaseUrl()}/users`, data)
+      await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
+      // Get CSRF token
+      const token = AuthService.getCsrfToken()
+
+      const response = await this.api.post(
+        `${this.getBaseUrl()}/users`,
+         data, {
+            headers: {
+            'X-XSRF-TOKEN': token,
+            'Content-Type': 'application/json'
+          }
+         })
       return response.data
     } catch (error) {
       console.error('Error creating user:', error)
@@ -34,16 +46,38 @@ class AdminService extends BaseService {
   }
   async updateUser(id, data) {
     try {
-      const response = await this.api.put(`${this.getBaseUrl()}/users/${id}`, data)
+      await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
+      // Get CSRF token
+      const token = AuthService.getCsrfToken()
+
+      const response = await this.api.put(
+        `${this.getBaseUrl()}/users/${id}`, 
+        data, {
+          headers: {
+            'X-XSRF-TOKEN': token,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
       return response.data
     } catch (error) {
       console.error(`Error updating user ${id}:`, error)
       throw error
     }
   }
-   async deleteUser(id) {
+  async deleteUser(id) {
     try {
-      const response = await this.api.delete(`${this.getBaseUrl()}/users/${id}`)
+      await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
+      const token = AuthService.getCsrfToken()
+      const response = await this.api.delete(
+        `${this.getBaseUrl()}/users/${id}`,
+        {
+          headers: {
+            'X-XSRF-TOKEN': token,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
       return response.data
     } catch (error) {
       console.error(`Error deleting user ${id}:`, error)
@@ -61,15 +95,26 @@ class AdminService extends BaseService {
       throw error
     }
   }
-  async assignRolePermissions(id, permissions) {
-    try {
-      const response = await this.api.post(`${this.getBaseUrl()}/users/${id}/roles-permissions`, { permissions })
-      return response.data
-    } catch (error) {
-      console.error(`Error assigning permissions to role ${id}:`, error)
-      throw error
-    }
+async assignRolePermissions(id, { roles, permissions }) {
+  try {
+    await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
+    const token = AuthService.getCsrfToken()
+    const response = await this.api.post(
+      `${this.getBaseUrl()}/users/${id}/roles-permissions`,
+      { roles, permissions }, // <--- fix: send both at root
+      {
+        headers: {
+          'X-XSRF-TOKEN': token,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+    return response.data
+  } catch (error) {
+    console.error(`Error assigning permissions to role ${id}:`, error)
+    throw error
   }
+}
 }
 
 export default AdminService

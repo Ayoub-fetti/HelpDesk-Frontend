@@ -13,6 +13,14 @@ const isEdit = ref(false)
 const roleForm = ref({ roles: [], permissions: {} })
 const allPermissions = ref([])
 
+// Static roles
+const ROLES = [
+  'administrator',
+  'supervisor',
+  'technician',
+  'final_user'
+]
+
 onMounted(async () => {
   await adminStore.fetchUsers()
 })
@@ -31,10 +39,15 @@ const openUserModal = (user = null) => {
 
 // Save user (add or update)
 const saveUser = async () => {
-  if (isEdit.value && selectedUser.value) {
-    await adminStore.updateUser(selectedUser.value.id, userForm.value)
+  const formData = { ...userForm.value }
+  if (isEdit.value) {
+    // Remove password if empty when editing
+    if (!formData.password) {
+      delete formData.password
+    }
+    await adminStore.updateUser(selectedUser.value.id, formData)
   } else {
-    await adminStore.createUser(userForm.value)
+    await adminStore.createUser(formData)
   }
   showUserModal.value = false
   await adminStore.fetchUsers()
@@ -50,8 +63,10 @@ const deleteUser = async (id) => {
 const openRoleModal = async (user) => {
   selectedUser.value = user
   await adminStore.fetchPermissions()
-  allPermissions.value = adminStore.permissions
-  // Pre-fill roleForm with user's roles/permissions
+  // If adminStore.permissions is { permissions: [...] }, extract the array
+  allPermissions.value = Array.isArray(adminStore.permissions)
+    ? adminStore.permissions
+    : adminStore.permissions.permissions || []
   roleForm.value = {
     roles: user.roles ? user.roles.map(r => r.name) : [],
     permissions: Object.fromEntries(
@@ -63,7 +78,14 @@ const openRoleModal = async (user) => {
 
 // Save roles/permissions
 const saveRolesPermissions = async () => {
-  await adminStore.assignRolePermissions(selectedUser.value.id, roleForm.value)
+  const permissionsPayload = {}
+  allPermissions.value.forEach(perm => {
+    permissionsPayload[perm] = !!roleForm.value.permissions[perm]
+  })
+
+  await adminStore.assignRolePermissions(selectedUser.value.id, {
+    permissions: permissionsPayload
+  })
   showRoleModal.value = false
   await adminStore.fetchUsers()
 }
@@ -106,7 +128,13 @@ const saveRolesPermissions = async () => {
             <input v-model="userForm.firstName" placeholder="Prénom" class="w-full mb-2 p-2 border rounded" required />
             <input v-model="userForm.lastName" placeholder="Nom" class="w-full mb-2 p-2 border rounded" required />
             <input v-model="userForm.email" placeholder="Email" class="w-full mb-2 p-2 border rounded" required type="email" />
-            <input v-model="userForm.user_type" placeholder="Type" class="w-full mb-2 p-2 border rounded" required />
+            <!-- Role select -->
+            <select v-model="userForm.user_type" class="w-full mb-2 p-2 border rounded" required>
+              <option value="" disabled>Sélectionner un rôle</option>
+              <option v-for="role in ROLES" :key="role" :value="role">
+                {{ role }}
+              </option>
+            </select>
             <input v-if="!isEdit" v-model="userForm.password" placeholder="Mot de passe" class="w-full mb-2 p-2 border rounded" required type="password" />
             <button type="submit" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded">{{ isEdit ? 'Mettre à jour' : 'Créer' }}</button>
             <button @click="showUserModal = false" type="button" class="mt-2 ml-2 px-4 py-2 bg-gray-300 rounded">Fermer</button>
@@ -120,7 +148,17 @@ const saveRolesPermissions = async () => {
           <form @submit.prevent="saveRolesPermissions">
             <div class="mb-2">
               <label class="block mb-1 font-semibold">Rôles</label>
-              <input v-model="roleForm.roles" placeholder="Rôles (séparés par des virgules)" class="w-full p-2 border rounded" />
+<div class="mb-2">
+  <label class="block mb-1 font-semibold">Rôle</label>
+  <div class="p-2 border rounded bg-gray-50">
+    <span v-if="selectedUser && selectedUser.user_type">
+      <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+        {{ selectedUser.user_type }}
+      </span>
+    </span>
+    <span v-else class="text-gray-400">Aucun rôle</span>
+  </div>
+</div>
             </div>
             <div class="mb-2">
               <label class="block mb-1 font-semibold">Permissions</label>

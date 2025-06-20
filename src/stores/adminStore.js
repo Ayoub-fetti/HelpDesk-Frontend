@@ -2,8 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { adminService } from '@/services'
 
-export const useAdminStore = defineStore('admin', () => {
-  const users = ref([])
+export const useAdminStore = defineStore('admin', () => {const users = ref([])
   const permissions = ref([])
   const loading = ref(false)
   const error = ref(null)
@@ -19,6 +18,44 @@ export const useAdminStore = defineStore('admin', () => {
       loading.value = false
     }
   }
+    const createUser = async (userData) => {
+    try {
+      loading.value = true
+      error.value = null
+      await adminService.createUser(userData)
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Erreur lors de la création de l\'utilisateur'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+    const updateUser = async (id, userData) => {
+    try {
+      loading.value = true
+      error.value = null
+      await adminService.updateUser(id, userData)
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Erreur lors de la mise à jour de l\'utilisateur'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+    const deleteUser = async (id) => {
+    try {
+      loading.value = true
+      error.value = null
+      await adminService.deleteUser(id)
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Erreur lors de la suppression de l\'utilisateur'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
 
   const fetchPermissions = async () => {
     try {
@@ -31,6 +68,18 @@ export const useAdminStore = defineStore('admin', () => {
       loading.value = false
     }
   }
+  const assignRolePermissions = async (id, data) => {
+    try {
+      loading.value = true
+      error.value = null
+      await adminService.assignRolePermissions(id, data)
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Erreur lors de l\'assignation des permissions'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
 
   return {
     users,
@@ -38,6 +87,10 @@ export const useAdminStore = defineStore('admin', () => {
     loading,
     error,
     fetchUsers,
-    fetchPermissions
+    fetchPermissions,
+    createUser,
+    updateUser,
+    deleteUser,
+    assignRolePermissions
   }
 })
