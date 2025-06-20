@@ -51,6 +51,16 @@ const router = createRouter({
       component: () => import('../views/AdminView.vue'),
     },
     {
+      path: '/admin/users',
+      name: 'admin-users',
+      component: () => import('../views/AdminUsersView.vue'),
+    },
+    {
+      path: '/admin/categories',
+      name: '/admin-categories',
+      component: () => import('../views/AdminCategoryView.vue'),
+    },
+    {
       path: '/tickets/new',
       name: 'new-ticket',
       component: () => import('../views/NewTicketView.vue'),

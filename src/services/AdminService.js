@@ -2,7 +2,7 @@ import BaseService from './BaseService'
 
 class AdminService extends BaseService {
   constructor() {
-    super('/admin')
+    super('admin')
   }
 
   async getUsers(params) {

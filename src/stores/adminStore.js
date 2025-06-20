@@ -12,7 +12,7 @@ export const useAdminStore = defineStore('admin', () => {
     try {
       loading.value = true
       error.value = null
-      users.value = await adminService.getUsers(params)
+      users.value = (await adminService.getUsers(params)).users
     } catch (err) {
       error.value = err.response?.data?.message || 'Erreur lors du chargement des utilisateurs'
     } finally {
