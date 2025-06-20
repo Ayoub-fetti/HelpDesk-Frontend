@@ -398,7 +398,7 @@ const handleResolveTicket = async () => {
             @click="handleStatusChange('assigned')"
             class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
             :disabled="isProcessing">
-            <i class="fas fa-spinner mr-2"></i>
+            <i class="fas fa-clipboard-list mr-4"></i>
             Attribué
           </button>
           <button 
@@ -412,7 +412,7 @@ const handleResolveTicket = async () => {
             @click="handleStatusChange('on_hold')"
             class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
             :disabled="isProcessing">
-            <i class="fas fa-pause mr-2"></i>
+            <i class="fas fa-pause mr-4"></i>
             En attente
           </button>
         </div>
@@ -421,7 +421,7 @@ const handleResolveTicket = async () => {
             @click="showStatusModal = false"
             class="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200"
             :disabled="isProcessing">
-            <i v-if="isProcessing" class="fas fa-spinner fa-spin mr-2"></i>
+            <i v-if="isProcessing" class="fas fa-spinner fa-spin mr-4"></i>
             Annuler
           </button>
         </div>

@@ -423,8 +423,12 @@ const getCommentAuthor = (comment) => {
     
     <div class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Loading state -->
-      <div v-if="isLoading" class="lg:col-span-3 flex justify-center py-10">
-        <div class="text-white">Chargement des détails du ticket...</div>
+      <div v-if="isLoading" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+
+        <svg class="animate-spin h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
       </div>
       
       <template v-else-if="ticketStore.currentTicket">
@@ -650,17 +654,24 @@ const getCommentAuthor = (comment) => {
     <h3 class="text-lg font-medium text-gray-900 mb-4">Changer le statut</h3>
     <div class="space-y-2">
       <button 
+        @click="handleStatusChange('assigned')"
+        class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+        :disabled="isProcessing">
+        <i class="fas fa-clipboard-list mr-4"></i>
+        Attribué
+      </button>
+      <button 
         @click="handleStatusChange('in_progress')"
         class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
         :disabled="isProcessing">
-        <i class="fas fa-spinner mr-2"></i>
+        <i class="fas fa-spinner mr-4"></i>
         En cours
       </button>
       <button 
         @click="handleStatusChange('on_hold')"
         class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
         :disabled="isProcessing">
-        <i class="fas fa-pause mr-2"></i>
+        <i class="fas fa-pause mr-4"></i>
         En attente
       </button>
     </div>

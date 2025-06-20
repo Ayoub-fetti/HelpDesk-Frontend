@@ -7,8 +7,20 @@ import App from './App.vue'
 import router from './router'
 import { useUserStore } from './stores'
 
+import { isRouteLoading } from './stores/loading'
+
 const app = createApp(App)
 const pinia = createPinia()
+
+router.beforeEach((to, from, next) => {
+  isRouteLoading.value = true
+  next()
+})
+router.afterEach(() => {
+  setTimeout(() => { 
+    isRouteLoading.value = false
+  }, 200)
+})
 
 app.use(pinia)
 app.use(router)
