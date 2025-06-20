@@ -42,6 +42,13 @@ const totalFinalUsers = computed(() =>
     <Sidebar />
     <div class="flex-1 p-8 bg-gray-50">
       <div class="max-w-4xl mx-auto mt-10 space-y-6">
+        <div class="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+          <p class="text-gray-800">
+            Bienvenue sur l'application <span class="font-semibold text-blue-700">HelpDesk</span> de gestion des tickets d'assistance.<br>
+            Vous êtes connecté en tant qu'<span class="font-semibold">administrateur</span>. Votre rôle consiste à gérer les utilisateurs, les catégories de tickets, et à consulter les statistiques globales de la plateforme.
+          </p>
+        </div>
+
         <div v-if="isLoading" class="text-center text-gray-500">Chargement...</div>
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <div class="bg-white rounded-xl shadow p-6 text-center">

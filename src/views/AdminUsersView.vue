@@ -100,28 +100,31 @@ const saveRolesPermissions = async () => {
       <table class="min-w-full bg-white rounded shadow">
         <thead>
           <tr>
-            <th class="p-2">Nom</th>
-            <th class="p-2">Email</th>
-            <th class="p-2">Type</th>
-            <th class="p-2">Actions</th>
+            <th class="p-3">Nom</th>
+            <th class="p-3">Email</th>
+            <th class="p-3">Type</th>
+            <th class="p-3"></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="user in adminStore.users" :key="user.id">
-            <td class="p-2">{{ user.firstName }} {{ user.lastName }}</td>
-            <td class="p-2">{{ user.email }}</td>
-            <td class="p-2">{{ user.user_type }}</td>
-            <td class="p-2 flex gap-2">
-              <button @click="openUserModal(user)" class="text-blue-600">Modifier</button>
-              <button @click="openRoleModal(user)" class="text-indigo-600">Rôles/Permissions</button>
-              <button @click="deleteUser(user.id)" class="text-red-600">Supprimer</button>
+            <td class="p-3 text-center hover:bg-gray-200">
+              {{ user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1) }}
+              {{ user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1) }}
+            </td>
+            <td class="p-3 text-center hover:bg-gray-200">{{ user.email }}</td>
+            <td class="p-3 text-center hover:bg-gray-200">{{ user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1)}}</td>
+            <td class="p-3 flex gap-2 hover:bg-gray-200">
+              <button @click="openUserModal(user)" class="text-orange-600"><i class="fa-solid fa-user-pen text-2xl"></i></button>
+              <button @click="openRoleModal(user)" class="text-indigo-600"><i class="fa-solid fa-ban text-2xl"></i></button>
+              <button @click="deleteUser(user.id)" class="text-red-600"><i class="fa-solid fa-trash text-2xl"></i></button>
             </td>
           </tr>
         </tbody>
       </table>
       <button @click="openUserModal()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded">Ajouter un utilisateur</button>
       <!-- User Modal (CRUD) -->
-      <div v-if="showUserModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+      <div v-if="showUserModal" class="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center">
         <div class="bg-white p-6 rounded shadow w-96">
           <h2 class="text-lg font-bold mb-4">{{ isEdit ? 'Modifier' : 'Ajouter' }} un utilisateur</h2>
           <form @submit.prevent="saveUser">
@@ -142,23 +145,23 @@ const saveRolesPermissions = async () => {
         </div>
       </div>
       <!-- Role/Permission Modal -->
-      <div v-if="showRoleModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+      <div v-if="showRoleModal" class="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center">
         <div class="bg-white p-6 rounded shadow w-96">
           <h2 class="text-lg font-bold mb-4">Assigner rôles et permissions</h2>
           <form @submit.prevent="saveRolesPermissions">
             <div class="mb-2">
               <label class="block mb-1 font-semibold">Rôles</label>
-<div class="mb-2">
-  <label class="block mb-1 font-semibold">Rôle</label>
-  <div class="p-2 border rounded bg-gray-50">
-    <span v-if="selectedUser && selectedUser.user_type">
-      <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-        {{ selectedUser.user_type }}
-      </span>
-    </span>
-    <span v-else class="text-gray-400">Aucun rôle</span>
-  </div>
-</div>
+              <div class="mb-2">
+                <label class="block mb-1 font-semibold">Rôle</label>
+                <div class="p-2 border rounded bg-gray-50">
+                  <span v-if="selectedUser && selectedUser.user_type">
+                    <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                      {{ selectedUser.user_type }}
+                    </span>
+                  </span>
+                  <span v-else class="text-gray-400">Aucun rôle</span>
+                </div>
+              </div>
             </div>
             <div class="mb-2">
               <label class="block mb-1 font-semibold">Permissions</label>
