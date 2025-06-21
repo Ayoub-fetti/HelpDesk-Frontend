@@ -172,6 +172,15 @@ const generatePDF = () => {
   <div class="min-h-screen bg-gray-50 text-gray-800">
     <Navbar />
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+      <div
+      v-if="ticketStore.loading"
+      class="fixed inset-0 bg-white flex items-center justify-center z-50"
+      >
+      <svg class="animate-spin h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+    </div>
       <!-- Header with Export Button -->
       <div class="flex justify-between items-center">
         <h1 class="text-3xl font-bold tracking-tight">Tableau de bord superviseur</h1>
