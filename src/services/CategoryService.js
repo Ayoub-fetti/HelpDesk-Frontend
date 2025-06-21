@@ -1,4 +1,6 @@
 import BaseService from './BaseService'
+import { AuthService } from '@/services'
+import api from '@/axios'
 
 class CategoryService extends BaseService {
   constructor() {
@@ -26,7 +28,16 @@ class CategoryService extends BaseService {
   }
   async createCategory(data) {
     try {
-      const response = await this.api.post(`${this.getBaseUrl()}/`, data)
+      await api.get('http://localhost:8000/sanctum/csrf-cookie')
+      const token = AuthService.getCsrfToken()
+      const response = await this.api.post(
+        `${this.getBaseUrl()}/`,
+         data , {
+            headers: {
+            'X-XSRF-TOKEN': token,
+            'Content-Type': 'application/json'
+          }
+         })
       return response.data
     } catch (error) {
       console.error('Error creating category:', error)
@@ -35,7 +46,16 @@ class CategoryService extends BaseService {
   }
   async updateCategory(id, data) {
     try {
-      const response = await this.api.put(`${this.getBaseUrl()}/${id}`, data)
+      await api.get('http://localhost:8000/sanctum/csrf-cookie')
+      const token = AuthService.getCsrfToken()
+      const response = await this.api.put(
+        `${this.getBaseUrl()}/${id}`,
+         data, {
+            headers: {
+            'X-XSRF-TOKEN': token,
+            'Content-Type': 'application/json'
+          }
+         })
       return response.data
     } catch (error) {
       console.error(`Error updating category ${id}:`, error)
@@ -44,7 +64,15 @@ class CategoryService extends BaseService {
   }
   async deleteCategory(id) {
     try {
-      const response = await this.api.delete(`${this.getBaseUrl()}/${id}`)
+      await api.get('http://localhost:8000/sanctum/csrf-cookie')
+      const token = AuthService.getCsrfToken()
+      const response = await this.api.delete(
+        `${this.getBaseUrl()}/${id}`, {
+          headers: {
+            'X-XSRF-TOKEN': token,
+            'Content-Type': 'application/json'
+          } 
+        })
       return response.data
     } catch (error) {
       console.error(`Error deleting category ${id}:`, error)
