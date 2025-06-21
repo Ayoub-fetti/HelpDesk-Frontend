@@ -73,27 +73,22 @@ const updateTicket = async () => {
     isSubmitting.value = true
     validationErrors.value = {}
 
-    const formData = new FormData()
-    // Use the _method parameter to simulate a PUT request through POST
-    formData.append('_method', 'PUT')
-    
-    // Add all fields, including empty ones to allow clearing values
-    for (const key in ticketData.value) {
-      formData.append(key, ticketData.value[key] !== null ? ticketData.value[key] : '')
+    // Send only JSON with ticket fields
+    await ticketStore.updateTicket(ticketId.value, ticketData.value)
+
+    // Then upload attachments if any (optional)
+    if (attachments.value.length > 0) {
+      const formData = new FormData()
+      attachments.value.forEach((file, index) => {
+        formData.append(`attachments[${index}]`, file)
+      })
+      await ticketStore.uploadAttachments(ticketId.value, formData)
     }
 
-    // Add new attachments
-    attachments.value.forEach((file, index) => {
-      formData.append(`attachments[${index}]`, file)
-    })
-
-    await ticketStore.updateTicket(ticketId.value, formData)
     submitSuccess.value = true
-
     setTimeout(() => {
       router.push('/dashboard')
     }, 1500)
-
   } catch (error) {
     if (error.response?.status === 422) {
       validationErrors.value = error.response.data.errors || {}
@@ -184,7 +179,7 @@ const updateTicket = async () => {
             <label class="block text-sm font-medium text-gray-700">Pièces jointes actuelles</label>
             <ul class="mt-2 space-y-1 text-sm text-gray-600 pl-5 list-disc">
               <li v-for="(attachment, index) in currentAttachments" :key="index">
-                {{ attachment.original_name || attachment.name }}
+                {{ attachment.file_name }}
               </li>
             </ul>
           </div>

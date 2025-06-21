@@ -217,4 +217,23 @@ async removeAssignment(ticketId) {
     }
   }
   
+  async uploadAttachments(id, formData) {
+    try {
+      await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
+      const token = AuthService.getCsrfToken()
+
+      const config = {
+        headers: {
+          'X-XSRF-TOKEN': token,
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+
+      const response = await this.api.post(`${this.getBaseUrl()}/${id}/attachments`, formData, config)
+      return response.data
+    } catch (error) {
+      console.error(`Error uploading attachments for ticket ${id}:`, error)
+      throw error
+    }
+  }
 }

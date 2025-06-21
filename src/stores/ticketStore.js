@@ -255,6 +255,21 @@ const removeAssignment = async (ticketId) => {
   }
 }
 
+  const uploadAttachments = async (ticketId, attachments) => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      const response = await ticketService.uploadAttachments(ticketId, attachments)
+      return response
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to upload attachments'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     tickets,
     currentTicket,
@@ -274,6 +289,7 @@ const removeAssignment = async (ticketId) => {
     resolveTicket,
     changeStatus,
     assignTicket,
-    removeAssignment
+    removeAssignment,
+    uploadAttachments
   }
 })
