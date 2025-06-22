@@ -61,13 +61,13 @@ async create(data) {
     try {
       await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
       const token = AuthService.getCsrfToken()
-    
-    const config = {
-      headers: {
-        'X-XSRF-TOKEN': token,
-        'Content-Type': data instanceof FormData ? 'multipart/form-data' : 'application/json'
+
+      const config = {
+        headers: {
+          'X-XSRF-TOKEN': token,
+          'Content-Type': 'application/json'
+        }
       }
-    }
       const response = await this.api.put(`${this.getBaseUrl()}/${id}`, data, config)
       return response.data
     } catch (error) {

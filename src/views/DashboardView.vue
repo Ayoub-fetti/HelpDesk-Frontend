@@ -1,10 +1,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useTicketStore } from '@/stores'
+import { useTicketStore, useUserStore } from '@/stores'
 import { RouterLink } from 'vue-router'
 import Navbar from '@/components/layout/navbar.vue'
 
 const ticketStore = useTicketStore()
+const userStore = useUserStore()
 const isLoading = ref(true)
 const statutFilter = ref('all')
 const priorityFilter = ref('all')
@@ -47,18 +48,20 @@ const stats = computed(() => {
   }
 })
 
-// Filtered tickets
+// Filtered tickets: only show tickets of the current user
 const filteredTickets = computed(() => {
-  let result = [...ticketStore.tickets]
-  
+  let result = ticketStore.tickets.filter(
+    ticket => ticket.user && ticket.user.id === userStore.user?.id
+  )
+
   if (statutFilter.value !== 'all') {
     result = result.filter(ticket => ticket.statut === statutFilter.value)
   }
-  
+
   if (priorityFilter.value !== 'all') {
     result = result.filter(ticket => ticket.priority === priorityFilter.value)
   }
-  
+
   return result
 })
 

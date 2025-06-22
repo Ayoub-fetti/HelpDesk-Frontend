@@ -109,7 +109,7 @@ const submitTicket = async () => {
         <form @submit.prevent="submitTicket" class="space-y-6">
           <!-- Étape 1 : Titre -->
           <div>
-            <label class="block text-sm font-medium text-gray-700">Titre *</label>
+            <label class="block text-sm font-medium text-gray-700">Titre <span class="text-red-500">*</span></label>
             <input
               v-model="ticketData.title"
               type="text"
@@ -122,7 +122,7 @@ const submitTicket = async () => {
 
           <!-- Étape 2 : Catégorie + Priorité -->
           <div v-if="currentStep >= 2">
-            <label class="block text-sm font-medium text-gray-700">Catégorie *</label>
+            <label class="block text-sm font-medium text-gray-700">Catégorie <span class="text-red-500">*</span></label>
             <select
               v-model="ticketData.category_id"
               required
@@ -135,7 +135,7 @@ const submitTicket = async () => {
           </div>
 
           <div v-if="currentStep >= 2">
-            <label class="block text-sm font-medium text-gray-700">Priorité *</label>
+            <label class="block text-sm font-medium text-gray-700">Priorité <span class="text-red-500">*</span></label>
             <select
               v-model="ticketData.priority"
               required
@@ -152,7 +152,7 @@ const submitTicket = async () => {
 
           <!-- Étape 3 : Description -->
           <div v-if="currentStep >= 3">
-            <label class="block text-sm font-medium text-gray-700">Description *</label>
+            <label class="block text-sm font-medium text-gray-700">Description <span class="text-red-500">*</span></label>
             <textarea
               v-model="ticketData.description"
               rows="5"

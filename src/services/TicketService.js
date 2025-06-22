@@ -36,53 +36,79 @@ export default class TicketService extends BaseService {
     }
   }
 
-  async changeStatus(ticketId, status) {
-    try {
-      // Get CSRF cookie first
-      await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
-      
-      // Get CSRF token
-      const token = AuthService.getCsrfToken()
-      
-      const response = await this.api.patch(
-        `${this.getBaseUrl()}/${ticketId}/status`, 
-        { status },
-        {
-          headers: {
-            'X-XSRF-TOKEN': token
-          }
+async changeStatus(ticketId, statut) {
+  try {
+    // Get CSRF cookie first
+    await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
+    
+    // Get CSRF token
+    const token = AuthService.getCsrfToken()
+    
+    const response = await this.api.post(
+      `${this.getBaseUrl()}/${ticketId}/status`,
+      { statut: statut }, 
+      {
+        headers: {
+          'X-XSRF-TOKEN': token,
+          'Content-Type': 'application/json'
         }
-      )
-      return response.data
-    } catch (error) {
-      console.error(`Error changing status for ticket ${ticketId}:`, error)
-      throw error
-    }
+      }
+    )
+    return response.data
+  } catch (error) {
+    console.error(`Error changing status for ticket ${ticketId}:`, error)
+    throw error
   }
+}
 
-  async assignTicket(ticketId, userId) {
-    try {
-      // Get CSRF cookie first
-      await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
-      
-      // Get CSRF token
-      const token = AuthService.getCsrfToken()
-      
-      const response = await this.api.patch(
-        `${this.getBaseUrl()}/${ticketId}/assign`, 
-        { user_id: userId },
-        {
-          headers: {
-            'X-XSRF-TOKEN': token
-          }
+async assignTicket(ticketId, technicianId) {
+  try {
+    // Get CSRF cookie first
+    await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
+    
+    // Get CSRF token
+    const token = AuthService.getCsrfToken()
+    
+    // Only send technician_id
+    const response = await this.api.post(
+      `${this.getBaseUrl()}/${ticketId}/assign`, 
+      { technician_id: technicianId },
+      {
+        headers: {
+          'X-XSRF-TOKEN': token
         }
-      )
-      return response.data
-    } catch (error) {
-      console.error(`Error assigning ticket ${ticketId}:`, error)
-      throw error
-    }
+      }
+    )
+    return response.data
+  } catch (error) {
+    console.error(`Error assigning ticket ${ticketId}:`, error)
+    throw error
   }
+}
+
+async removeAssignment(ticketId) {
+  try {
+    // Get CSRF cookie first
+    await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
+    
+    // Get CSRF token
+    const token = AuthService.getCsrfToken()
+    
+    const response = await this.api.post(
+      `${this.getBaseUrl()}/${ticketId}/unassign`,
+      {},
+      {
+        headers: {
+          'X-XSRF-TOKEN': token
+        }
+      }
+    )
+    return response.data
+  } catch (error) {
+    console.error(`Error removing assignment for ticket ${ticketId}:`, error)
+    throw error
+  }
+}
 
   // Time tracking methods
   async getTimeTracking(ticketId) {
@@ -139,6 +165,74 @@ export default class TicketService extends BaseService {
       return response.data
     } catch (error) {
       console.error(`Error stopping time tracking for ticket ${ticketId}:`, error)
+      throw error
+    }
+  }
+
+  async closeTicket(ticketId) {
+    try {
+      // Get CSRF cookie first
+      await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
+      
+      // Get CSRF token  
+      const token = AuthService.getCsrfToken()
+      
+      const response = await this.api.post(
+        `${this.getBaseUrl()}/${ticketId}/close`,
+        {},
+        {
+          headers: {
+            'X-XSRF-TOKEN': token
+          }
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error(`Error closing ticket ${ticketId}:`, error)
+      throw error
+    }
+  }
+
+  async resolveTicket(ticketId, data) {
+    try {
+      // Get CSRF cookie first  
+      await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
+      
+      // Get CSRF token
+      const token = AuthService.getCsrfToken()
+      
+      const response = await this.api.post(
+        `${this.getBaseUrl()}/${ticketId}/resolve`,
+        data,
+        {
+          headers: {
+            'X-XSRF-TOKEN': token
+          }
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error(`Error resolving ticket ${ticketId}:`, error) 
+      throw error
+    }
+  }
+  
+  async uploadAttachments(id, formData) {
+    try {
+      await this.api.get('http://localhost:8000/sanctum/csrf-cookie')
+      const token = AuthService.getCsrfToken()
+
+      const config = {
+        headers: {
+          'X-XSRF-TOKEN': token,
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+
+      const response = await this.api.post(`${this.getBaseUrl()}/${id}/attachments`, formData, config)
+      return response.data
+    } catch (error) {
+      console.error(`Error uploading attachments for ticket ${id}:`, error)
       throw error
     }
   }

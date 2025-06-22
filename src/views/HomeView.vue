@@ -1,6 +1,9 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import Navbar from '@/components/layout/navbar.vue'
+import { useUserStore } from '@/stores';
+
+const userStore = useUserStore()
 
 </script>
 
@@ -19,7 +22,7 @@ import Navbar from '@/components/layout/navbar.vue'
             <p class="text-xl opacity-80 mb-8 leading-relaxed">
               Un outil complet pour gérer les demandes d'assistance technique et résoudre les problèmes efficacement.
             </p>
-            <div class="flex flex-col sm:flex-row gap-4">
+            <div v-if="!userStore.isAuthenticated" class="flex flex-col sm:flex-row gap-4">
               <RouterLink 
                 to="/register" 
                 class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md text-center transition"

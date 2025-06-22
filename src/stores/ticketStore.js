@@ -126,7 +126,7 @@ export const useTicketStore = defineStore('tickets', () => {
       loading.value = false
     }
   }
-    const getTimeTracking = async (ticketId) => {
+  const getTimeTracking = async (ticketId) => {
     try {
       loading.value = true
       error.value = null
@@ -140,7 +140,7 @@ export const useTicketStore = defineStore('tickets', () => {
       loading.value = false
     }
   }
-    const startTimeTracking = async (ticketId) => {
+  const startTimeTracking = async (ticketId) => {
     try {
       loading.value = true
       error.value = null
@@ -154,7 +154,7 @@ export const useTicketStore = defineStore('tickets', () => {
       loading.value = false
     }
   }
-    const stopTimeTracking = async (ticketId) => {
+  const stopTimeTracking = async (ticketId) => {
     try {
       loading.value = true
       error.value = null
@@ -163,6 +163,107 @@ export const useTicketStore = defineStore('tickets', () => {
       return response
     } catch (err) {
       error.value = err.response?.data?.message || 'Failed to stop time tracking'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+  
+  const closeTicket = async (id) => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      const response = await ticketService.closeTicket(id)
+      return response
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to close ticket'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const resolveTicket = async (id, data) => {
+    try {
+
+      loading.value = true
+      error.value = null
+      
+      const response = await ticketService.resolveTicket(id, data)
+      return response
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to resolve ticket'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+const changeStatus = async (ticketId, statut) => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await ticketService.changeStatus(ticketId, statut)
+    // Refresh tickets list after successful status change
+    await fetchTickets()
+    return response
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Failed to change status'
+    throw err
+  } finally {
+    loading.value = false
+  }
+}
+
+const assignTicket = async (ticketId, userId) => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await ticketService.assignTicket(ticketId, userId)
+    
+    // Refresh the current ticket data after assignment
+    await fetchTicket(ticketId)
+    
+    return response
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Failed to assign ticket'
+    throw err
+  } finally {
+    loading.value = false
+  }
+}
+
+const removeAssignment = async (ticketId) => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await ticketService.removeAssignment(ticketId)
+    
+    // Refresh the current ticket data after removing assignment
+    await fetchTicket(ticketId)
+    
+    return response
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Failed to remove ticket assignment'
+    throw err
+  } finally {
+    loading.value = false
+  }
+}
+
+  const uploadAttachments = async (ticketId, attachments) => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      const response = await ticketService.uploadAttachments(ticketId, attachments)
+      return response
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Failed to upload attachments'
       throw err
     } finally {
       loading.value = false
@@ -183,6 +284,12 @@ export const useTicketStore = defineStore('tickets', () => {
     fetchComments,
     getTimeTracking,
     startTimeTracking,
-    stopTimeTracking
+    stopTimeTracking,
+    closeTicket,
+    resolveTicket,
+    changeStatus,
+    assignTicket,
+    removeAssignment,
+    uploadAttachments
   }
 })

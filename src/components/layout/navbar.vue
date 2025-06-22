@@ -147,6 +147,7 @@ const previewNotifications = computed(() => {
           <!-- Navigation Links -->
           <div class="ml-10 flex items-baseline space-x-4">
             <RouterLink 
+              v-if="currentUser?.user_type === 'final_user'" 
               to="/" 
               class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800"
               active-class="bg-blue-800"
@@ -154,38 +155,52 @@ const previewNotifications = computed(() => {
               Accueil 
             </RouterLink>
             <RouterLink 
+              v-if="currentUser?.user_type === 'final_user'" 
               to="/contact" 
               class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800"
               active-class="bg-blue-800"
             >
               Support 
             </RouterLink>
-            
             <RouterLink 
-              v-if="isAuthenticated" 
+              v-if="isAuthenticated && currentUser?.user_type === 'final_user'" 
               to="/dashboard" 
               class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800"
               active-class="bg-blue-800"
             >
               Tableau de bord
             </RouterLink>
-            
             <RouterLink 
-              v-if="isAuthenticated" 
+              v-if="isAuthenticated && currentUser?.user_type === 'final_user'" 
               to="/tickets/new" 
               class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800"
               active-class="bg-blue-800"
             >
               Nouveau Ticket
             </RouterLink>
-            
             <RouterLink 
               v-if="isAdmin" 
               to="/admin" 
               class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800"
               active-class="bg-blue-800"
             >
-              Admin
+              Administrator
+            </RouterLink>
+            <RouterLink 
+              v-if="currentUser?.user_type === 'technician'" 
+              to="/dashboard/technician" 
+              class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800"
+              active-class="bg-blue-800"
+            >
+              Technicien
+            </RouterLink>
+            <RouterLink 
+              v-if="currentUser?.user_type === 'supervisor'" 
+              to="/dashboard/supervisor" 
+              class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800"
+              active-class="bg-blue-800"
+            >
+              Superviseur
             </RouterLink>
           </div>
         </div>

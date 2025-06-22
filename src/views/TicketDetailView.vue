@@ -15,8 +15,13 @@ const newComment = ref('')
 const isPrivateComment = ref(false)
 const submittingComment = ref(false)
 const ticketId = computed(() => route.params.id)
-const isAdmin = computed(() => userStore.isAdmin)
 const currentUser = computed(() => userStore.user)
+const isResolved = computed(() => ticketStore.currentTicket?.statut === 'resolved')
+const isClosed = computed(() => ticketStore.currentTicket?.statut === 'closed')
+const showStatusModal = ref(false)
+const showResolveModal = ref(false)
+const solution = ref('')
+const isProcessing = ref(false)
 
 // Time tracking states
 const timeTracking = ref(null)
@@ -25,6 +30,51 @@ const isTimeRunning = ref(false)
 const elapsedTime = ref(0)
 const timeTrackingInterval = ref(null)
 
+
+const openStatusModal = () => {
+  showStatusModal.value = true
+}
+
+const openResolveModal = () => {
+  solution.value = ''
+  showResolveModal.value = true
+}
+const handleStatusChange = async (newStatus) => {
+  try {
+    isProcessing.value = true
+    await ticketStore.changeStatus(ticketId.value, newStatus)
+    showStatusModal.value = false
+    await ticketStore.fetchTicket(ticketId.value)
+  } catch (error) {
+    console.error('Failed to change ticket status:', error)
+  } finally {
+    isProcessing.value = false
+  }
+}
+const handleResolveTicket = async () => {
+  if (!solution.value.trim()) return
+  
+  try {
+    isProcessing.value = true
+    await ticketStore.resolveTicket(ticketId.value, {
+      solution: solution.value
+    })
+    showResolveModal.value = false
+    await ticketStore.fetchTicket(ticketId.value)
+  } catch (error) {
+    console.error('Failed to resolve ticket:', error)
+  } finally {
+    isProcessing.value = false
+  }
+}
+const closeTicket = async () => {
+  try {
+    await ticketStore.closeTicket(ticketId.value)
+    await ticketStore.fetchTicket(ticketId.value)
+  } catch (error) {
+    console.error('Failed to close ticket:', error)
+  }
+}
 // Check if user is staff (admin, supervisor, or technician)
 const isStaff = computed(() => {
   if (!currentUser.value) return false
@@ -40,6 +90,7 @@ const isImageFile = (filename) => {
     filename.toLowerCase().endsWith(ext)
   )
 }
+
 
 const isVideoFile = (filename) => {
   if (!filename) return false
@@ -367,13 +418,17 @@ const getCommentAuthor = (comment) => {
 </script>
 
 <template>
-  <div class="bg-gradient-to-b from-[#0B1F63] to-[#0B1F63]/80 min-h-screen">
+  <div class="bg-gray-50 min-h-screen">
     <Navbar />
     
     <div class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Loading state -->
-      <div v-if="isLoading" class="lg:col-span-3 flex justify-center py-10">
-        <div class="text-white">Chargement des détails du ticket...</div>
+      <div v-if="isLoading" class="fixed inset-0 bg-white flex items-center justify-center z-50">
+
+        <svg class="animate-spin h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
       </div>
       
       <template v-else-if="ticketStore.currentTicket">
@@ -408,12 +463,12 @@ const getCommentAuthor = (comment) => {
 
             <div class="mt-4">
 
-              <h2 class="text-xl font-bold mb-2 text-blue-700">{{ ticketStore.currentTicket.title }}</h2>
+              <h2 class="text-xl font-bold mb-2">{{ ticketStore.currentTicket.title }}</h2>
             </div>
 
             <!-- Description -->
             <div class="mt-6">
-              <h3 class="font-semibold mb-2 text-blue-700">Description du problème</h3>
+              <h3 class="font-semibold mb-2 text-blue-700">Description du problème :</h3>
               <p class="text-sm text-gray-600 whitespace-pre-line">{{ ticketStore.currentTicket.description }}</p>
             </div>
 
@@ -554,8 +609,113 @@ const getCommentAuthor = (comment) => {
               </button>
             </div>
           </div>
+
+          <!-- Action Buttons -->
+          <div v-if="isStaff" class="mt-4 space-y-2">
+            <h4 class="font-semibold text-gray-700">Actions</h4>
+          <div class="flex flex-wrap gap-2">
+              <!-- Change Status -->
+          <button 
+            @click="openStatusModal"
+            class="flex items-center px-3 py-2 text-sm bg-indigo-50 text-indigo-700 rounded-md hover:bg-indigo-100"
+          >
+            <i class="fas fa-exchange-alt mr-2"></i>
+            Changer le statut
+          </button>
+
+    <!-- Resolve -->
+    <button 
+      @click="openResolveModal"
+      class="flex items-center px-3 py-2 text-sm bg-green-50 text-green-700 rounded-md hover:bg-green-100"
+      v-if="!isResolved"
+    >
+      <i class="fa-solid fa-clipboard-check mr-2"></i>
+      Résoudre
+    </button>
+
+    <!-- Close -->
+    <button 
+      @click="closeTicket"
+      class="flex items-center px-3 py-2 text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100"
+      v-if="!isClosed"
+    >
+      <i class="fa-solid fa-lock mr-2"></i>
+      Fermer
+    </button>
+  </div>
+</div>
         </div>
       </template>
     </div>
   </div>
+  <!-- Status Change Modal -->
+<div v-if="showStatusModal" class="fixed inset-0 bg-white/30 backdrop-blur-sm overflow-y-auto h-full w-full flex items-center justify-center z-50">
+  <div class="relative bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 p-6">
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Changer le statut</h3>
+    <div class="space-y-2">
+      <button 
+        @click="handleStatusChange('assigned')"
+        class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+        :disabled="isProcessing">
+        <i class="fas fa-clipboard-list mr-4"></i>
+        Attribué
+      </button>
+      <button 
+        @click="handleStatusChange('in_progress')"
+        class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+        :disabled="isProcessing">
+        <i class="fas fa-spinner mr-4"></i>
+        En cours
+      </button>
+      <button 
+        @click="handleStatusChange('on_hold')"
+        class="w-full text-left px-4 py-2 hover:bg-gray-200 rounded-md"
+        :disabled="isProcessing">
+        <i class="fas fa-pause mr-4"></i>
+        En attente
+      </button>
+    </div>
+    <div class="mt-6 flex justify-end gap-3">
+      <button 
+        @click="showStatusModal = false"
+        class="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200"
+        :disabled="isProcessing">
+        <i v-if="isProcessing" class="fas fa-spinner fa-spin mr-2"></i>
+        Annuler
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Resolve Modal -->
+<div v-if="showResolveModal" class="fixed inset-0 bg-white/30 backdrop-blur-sm overflow-y-auto h-full w-full flex items-center justify-center z-50">
+  <div class="relative bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 p-6">
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Résoudre le ticket</h3>
+    <div class="mb-4">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Solution</label>
+      <textarea
+        v-model="solution"
+        rows="4"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+        placeholder="Décrivez la solution apportée..."
+        required
+      ></textarea>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button 
+        @click="showResolveModal = false"
+        class="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200"
+        :disabled="isProcessing">
+        Annuler
+      </button>
+      <button 
+        @click="handleResolveTicket"
+        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
+        :disabled="isProcessing || !solution.trim()">
+        <i v-if="isProcessing" class="fas fa-spinner fa-spin mr-2"></i>
+        Résoudre
+      </button>
+    </div>
+  </div>
+</div>
 </template>
