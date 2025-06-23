@@ -68,7 +68,7 @@ export default class AuthService {
       // Add a small delay
       await new Promise(resolve => setTimeout(resolve, 100))
       
-      // Extract CSRF token from cookies
+      // Extract CSRF token from cookies *after* the delay
       const token = this.getCsrfToken()
       
       const response = await api.post('/api/logout', {}, {

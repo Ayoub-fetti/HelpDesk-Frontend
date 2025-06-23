@@ -101,7 +101,7 @@ async assignRolePermissions(id, { roles, permissions }) {
     const token = AuthService.getCsrfToken()
     const response = await this.api.post(
       `${this.getBaseUrl()}/users/${id}/roles-permissions`,
-      { roles, permissions }, // <--- fix: send both at root
+      { roles, permissions },
       {
         headers: {
           'X-XSRF-TOKEN': token,

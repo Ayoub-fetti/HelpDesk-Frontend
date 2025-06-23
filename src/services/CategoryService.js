@@ -36,7 +36,7 @@ class CategoryService extends BaseService {
             headers: {
             'X-XSRF-TOKEN': token,
             'Content-Type': 'application/json'
-          }
+          }, 
          })
       return response.data
     } catch (error) {

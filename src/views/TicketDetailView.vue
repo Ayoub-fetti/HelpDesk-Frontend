@@ -479,8 +479,7 @@ const getCommentAuthor = (comment) => {
                 <div v-for="attachment in ticketStore.currentTicket.attachments" 
                     :key="attachment.id" 
                     class="flex items-center gap-2 p-2 bg-gray-100 rounded-lg w-60">
-                  <a :href="`http://localhost:8000/storage/${attachment.file_path}`" 
-                    target="_blank">
+                  <a :href="`/storage/${attachment.file_path}`" target="_blank">
                     <!-- Image files -->
                     <i v-if="isImageFile(attachment.file_name || attachment.name)" 
                      class="fas fa-images text-xl text-blue-500 hover:text-blue-300"></i>
@@ -491,9 +490,7 @@ const getCommentAuthor = (comment) => {
                     <i v-else 
                        class="fa-solid fa-print text-xl text-red-700 hover:text-red-300"></i>
                   </a>
-                  <a :href="`http://localhost:8000/storage/${attachment.file_path}`" 
-                    target="_blank" 
-                    class="text-sm font-medium hover:text-blue-600">
+                  <a :href="`/storage/${attachment.file_path}`" target="_blank" class="text-sm font-medium hover:text-blue-600">
                     {{ attachment.file_name || attachment.file_name }}
                   </a>
                 </div>
