@@ -93,7 +93,7 @@ const saveRolesPermissions = async () => {
     <div class="p-4 flex-1">
       <h1 class="text-2xl font-bold mb-4">Gestion des utilisateurs</h1>
 
-      <button @click="openUserModal()" class="mb-4 px-4 py-2 bg-blue-500 text-white rounded">Ajouter un utilisateur</button>
+      <button @click="openUserModal()" class="mb-4 px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white rounded">Ajouter un utilisateur</button>
 
       <div class="overflow-x-auto">
         <table class="min-w-full bg-white border border-gray-300">
@@ -113,9 +113,9 @@ const saveRolesPermissions = async () => {
               <td class="border p-2">{{ user.email }}</td>
               <td class="border p-2">{{ user.user_type }}</td>
               <td class="border p-2">
-                <button @click="openUserModal(user)" class="bg-yellow-400 px-2 py-1 rounded mr-2">Modifier</button>
-                <button @click="openRoleModal(user)" class="bg-indigo-500 px-2 py-1 text-white rounded mr-2">Permissions</button>
-                <button @click="deleteUser(user.id)" class="bg-red-500 px-2 py-1 text-white rounded">Supprimer</button>
+                <button @click="openUserModal(user)" class="bg-yellow-400 hover:bg-yellow-600 px-2 py-1 rounded mr-2">Modifier</button>
+                <button @click="openRoleModal(user)" class="bg-indigo-500 hover:bg-indigo-700 px-2 py-1 text-white rounded mr-2">Permissions</button>
+                <button @click="deleteUser(user.id)" class="bg-red-500 hover:bg-red-700 px-2 py-1 text-white rounded">Supprimer</button>
               </td>
             </tr>
           </tbody>
@@ -123,9 +123,15 @@ const saveRolesPermissions = async () => {
       </div>
 
       <!-- User Modal -->
-      <div v-if="showUserModal" class="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center">
+      <div v-if="showUserModal" class="fixed inset-0  bg-white/30 backdrop-blur-sm flex justify-center items-center">
         <div class="bg-white p-6 rounded shadow w-96">
+
           <h2 class="text-lg font-bold mb-4">{{ isEdit ? 'Modifier' : 'Ajouter' }} un utilisateur</h2>
+
+          <!-- error display  -->
+           <div v-if="adminStore.error" class="bg-red-50 border-l-4 border-red-400 p-3 mb-4 text-left">
+            <p class="text-sm text-red-700"> {{ adminStore.error }}</p>
+           </div>
           <form @submit.prevent="saveUser">
             <input v-model="userForm.firstName" placeholder="Prénom" class="w-full mb-2 p-2 border rounded" required />
             <input v-model="userForm.lastName" placeholder="Nom" class="w-full mb-2 p-2 border rounded" required />
@@ -144,9 +150,14 @@ const saveRolesPermissions = async () => {
       </div>
 
       <!-- Role Modal -->
-      <div v-if="showRoleModal" class="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center">
+      <div v-if="showRoleModal" class="fixed inset-0  bg-white/30 backdrop-blur-sm flex justify-center items-center">
         <div class="bg-white p-6 rounded shadow w-96">
           <h2 class="text-lg font-bold mb-4">Gérer les permissions</h2>
+          
+          <!-- error display  -->
+           <div v-if="adminStore.error" class="bg-red-50 border-l-4 border-red-400 p-3 mb-4 text-left">
+            <p class="text-sm text-red-700"> {{ adminStore.error }}</p>
+           </div>
           <form @submit.prevent="saveRolesPermissions">
             <div class="mb-4">
               <div class="font-semibold mb-1">Rôle actuel:</div>

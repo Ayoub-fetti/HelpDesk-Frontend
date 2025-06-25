@@ -10,6 +10,8 @@ const newCategory = ref({ name: '' })
 const editingCategory = ref(null)
 const editCategoryData = ref({ name: '' })
 const isProcessing = ref(false)
+const isProcessing2 = ref(false)
+const errorMessage = ref('')
 
 onMounted(() => {
   categoryStore.fetchCategories()
@@ -25,6 +27,7 @@ const createCategory = async () => {
     await categoryStore.fetchCategories()
   } catch (error) {
     console.error('Failed to create category:', error)
+    errorMessage.value = error.response?.data?.message 
   } finally {
     isProcessing.value = false
   }
@@ -36,10 +39,18 @@ const startEditCategory = (category) => {
 }
 
 const updateCategory = async () => {
-  if (editCategoryData.value.name.trim() === '') return
-  await categoryService.updateCategory(editingCategory.value.id, editCategoryData.value)
-  editingCategory.value = null
-  await categoryStore.fetchCategories()
+  try {
+    isProcessing2.value = true
+    if (editCategoryData.value.name.trim() === '') return
+    await categoryService.updateCategory(editingCategory.value.id, editCategoryData.value)
+    editingCategory.value = null
+    await categoryStore.fetchCategories()
+  } catch (error) {
+    console.error('Failed to update category:', error)
+    errorMessage.value = error.response?.data?.message 
+  } finally {
+    isProcessing2.value = false
+  }
 }
 
 const cancelEdit = () => {
@@ -71,7 +82,10 @@ const deleteCategory = async (id) => {
       </div>
 
       <h1 class="text-2xl font-bold mb-4">Catégories</h1>
-
+      <!-- Simple error display -->
+      <div v-if="errorMessage" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+        {{ errorMessage }}
+      </div>
       <!-- Formulaire d'ajout -->
       <form @submit.prevent="createCategory" class="mb-4 flex gap-2">
         <input v-model="newCategory.name" placeholder="Nom de la nouvelle catégorie" class="border p-2 rounded" />
@@ -101,11 +115,11 @@ const deleteCategory = async (id) => {
               </td>
               <td class="border p-2">
                 <div v-if="editingCategory && editingCategory.id === category.id">
-                  <button @click="updateCategory" class="bg-green-500 text-white px-2 py-1 rounded mr-2">Enregistrer</button>
+                  <button @click="updateCategory" class="bg-green-500 text-white px-2 py-1 rounded mr-2" :disabled="isProcessing2"> <i v-if="isProcessing2" class="fas fa-spinner fa-spin mr-4"></i>Enregistrer</button>
                   <button @click="cancelEdit" class="bg-gray-300 px-2 py-1 rounded">Annuler</button>
                 </div>
                 <div v-else>
-                  <button @click="startEditCategory(category)" class="bg-yellow-400 px-2 py-1 rounded mr-2">Modifier</button>
+                  <button @click="startEditCategory(category)" class="bg-yellow-400 px-2 py-1 rounded mr-2"> Modifier</button>
                   <button @click="deleteCategory(category.id)" class="bg-red-500 text-white px-2 py-1 rounded">Supprimer</button>
                 </div>
               </td>
