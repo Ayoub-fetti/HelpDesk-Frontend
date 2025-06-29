@@ -135,84 +135,82 @@ const previewNotifications = computed(() => {
           </div>
         </div>
 
-        <div class="flex justify-end gap-5">
-                  <!-- Notifications - Always visible -->
-                <div v-if="isAuthenticated" class="relative notifications-container">
-                  <button @click.stop="toggleNotifications" class="flex items-center relative mt-1.5">
-                    <i class="fas fa-bell text-xl cursor-pointer"></i>
-                    <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                      {{ unreadCount > 99 ? '99+' : unreadCount }}
-                    </span>
-                  </button>
+        <div class="flex items-center gap-5">
+          <!-- Notifications - Always visible -->
+          <div v-if="isAuthenticated" class="relative notifications-container">
+            <button @click.stop="toggleNotifications" class="flex items-center relative mt-1.5">
+              <i class="fas fa-bell text-xl cursor-pointer"></i>
+              <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {{ unreadCount > 99 ? '99+' : unreadCount }}
+              </span>
+            </button>
 
-                  <!-- Notifications Panel -->
-                  <div v-if="showNotifications" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-30">
-                    <div class="py-2 bg-blue-700 text-white px-4 flex justify-between items-center">
-                      <h3 class="text-sm font-medium">Notifications</h3>
-                      <button @click.stop="markAllAsRead" class="text-xs hover:underline focus:outline-none" :disabled="unreadCount === 0">
-                        Tout marquer comme lu
-                      </button>
-                    </div>
+            <!-- Notifications Panel -->
+            <div v-if="showNotifications" class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-30">
+              <!-- Notification panel content unchanged -->
+              <div class="py-2 bg-blue-700 text-white px-4 flex justify-between items-center">
+                <h3 class="text-sm font-medium">Notifications</h3>
+                <button @click.stop="markAllAsRead" class="text-xs hover:underline focus:outline-none" :disabled="unreadCount === 0">
+                  Tout marquer comme lu
+                </button>
+              </div>
 
-                    <div class="max-h-96 overflow-y-auto">
-                      <div v-if="notificationStore.loading" class="p-4 text-center text-gray-500 text-sm">
-                        <i class="fas fa-circle-notch fa-spin mr-2"></i> Chargement des notifications...
-                      </div>
-                      <div v-else-if="!notifications.length" class="p-4 text-center text-gray-500 text-sm">
-                        <i class="fas fa-bell-slash mr-1"></i> Pas de notifications
-                      </div>
-                      <div v-else>
-                        <div v-for="notification in previewNotifications" :key="notification.id" :class="['p-3 border-b text-sm cursor-pointer hover:bg-gray-50', { 'bg-blue-50': !notification.read_at }]" @click.stop="markAsRead(notification.id)">
-                          <div class="flex justify-between">
-                            <p class="font-semibold text-gray-800">{{ notification.data?.title || 'Notification' }}</p>
-                            <span class="text-xs text-gray-400">{{ formatDate(notification.created_at) }}</span>
-                          </div>
-                          <p class="text-gray-600 mt-1">{{ notification.data?.message }}</p>
-                        </div>
-                      </div>
+              <div class="max-h-96 overflow-y-auto">
+                <!-- Rest of notification panel content -->
+                <div v-if="notificationStore.loading" class="p-4 text-center text-gray-500 text-sm">
+                  <i class="fas fa-circle-notch fa-spin mr-2"></i> Chargement des notifications...
+                </div>
+                <div v-else-if="!notifications.length" class="p-4 text-center text-gray-500 text-sm">
+                  <i class="fas fa-bell-slash mr-1"></i> Pas de notifications
+                </div>
+                <div v-else>
+                  <div v-for="notification in previewNotifications" :key="notification.id" :class="['p-3 border-b text-sm cursor-pointer hover:bg-gray-50', { 'bg-blue-50': !notification.read_at }]" @click.stop="markAsRead(notification.id)">
+                    <div class="flex justify-between">
+                      <p class="font-semibold text-gray-800">{{ notification.data?.title || 'Notification' }}</p>
+                      <span class="text-xs text-gray-400">{{ formatDate(notification.created_at) }}</span>
                     </div>
-
-                    <div v-if="notifications.length" class="py-2 bg-gray-50 text-center">
-                      <RouterLink to="/notifications" class="text-xs text-blue-600 hover:underline">Voir toutes les notifications</RouterLink>
-                    </div>
+                    <p class="text-gray-600 mt-1">{{ notification.data?.message }}</p>
                   </div>
                 </div>
+              </div>
 
-                <!-- Burger menu button -->
-                <div class="lg:hidden ml-2">
-                  <button @click="toggleMenu" class="text-white text-2xl focus:outline-none">
-                    <i class="fas fa-bars"></i>
-                  </button>
-                </div>
-        </div>
-
-        <!-- Right side -->
-        <div class="hidden lg:flex items-center">
-          <div v-if="isAuthenticated" class="ml-4 flex items-center md:ml-6">
-            <!-- User -->
-            <div class="hidden ml-3 relative group">
-              <div class="flex items-center">
-                <span class="mr-2">
-                  {{ currentUser?.firstName?.charAt(0).toUpperCase() + currentUser?.firstName?.slice(1) }}
-                  {{ currentUser?.lastName?.charAt(0).toUpperCase() + currentUser?.lastName?.slice(1) }}
-                </span>
-                <button @click="handleLogout" class="px-3 py-2 bg-blue-800 hover:bg-blue-700 rounded-md text-sm font-medium">
-                  Déconnexion
-                </button>
+              <div v-if="notifications.length" class="py-2 bg-gray-50 text-center">
+                <RouterLink to="/notifications" class="text-xs text-blue-600 hover:underline">Voir toutes les notifications</RouterLink>
               </div>
             </div>
           </div>
 
-          <div v-else class="ml-4 flex items-center space-x-3">
+          <!-- User info for large screens -->
+          <div v-if="isAuthenticated" class="hidden lg:flex items-center">
+            <div class="flex items-center">
+              <span class="mr-2">
+                {{ currentUser?.firstName?.charAt(0).toUpperCase() + currentUser?.firstName?.slice(1) }}
+                {{ currentUser?.lastName?.charAt(0).toUpperCase() + currentUser?.lastName?.slice(1) }}
+              </span>
+              <button @click="handleLogout" class="px-3 py-2 bg-blue-800 hover:bg-blue-700 rounded-md text-sm font-medium">
+                Déconnexion
+              </button>
+            </div>
+          </div>
+
+          <!-- Login/register buttons for large screens -->
+          <div v-else class="hidden lg:flex items-center space-x-3">
             <RouterLink to="/login" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-800">Se connecter</RouterLink>
             <RouterLink to="/register" class="px-3 py-2 bg-blue-700 hover:bg-blue-600 rounded-md text-sm font-medium">S'inscrire</RouterLink>
+          </div>
+
+          <!-- Burger menu button -->
+          <div class="lg:hidden ml-2">
+            <button @click="toggleMenu" class="text-white text-2xl focus:outline-none">
+              <i class="fas fa-bars"></i>
+            </button>
           </div>
         </div>
       </div>
 
       <!-- Mobile Menu (sliding) -->
       <div class="lg:hidden transition-all duration-300 ease-in-out overflow-hidden" :class="isMenuOpen ? 'max-h-screen opacity-100 py-4 space-y-2' : 'max-h-0 opacity-0'">
-        <!-- Auth: user info or login/register -->
+        <!-- Auth: user info or login/register for mobile -->
         <div v-if="isAuthenticated" class="flex flex-col space-y-2">
           <span class="text-sm text-white">Bonjour, <strong>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</strong></span>
           <button @click="handleLogout" class="w-full px-3 py-2 bg-blue-800 hover:bg-blue-700 text-white text-sm font-medium rounded-md"><i class="fa-solid fa-right-from-bracket mr-2"></i>Déconnexion</button>
