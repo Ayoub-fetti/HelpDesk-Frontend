@@ -37,15 +37,18 @@ const totalFinalUsers = computed(() =>
 </script>
 
 <template>
-  <Navbar/>
-  <div class="flex min-h-screen">
-    <Sidebar />
-    <div class="flex-1 p-8 bg-gray-50">
+  <Navbar />
+  <div class="flex flex-col md:flex-row min-h-screen">
+    <Sidebar class="w-full md:w-64" />
+    <div class="flex-1 p-4 sm:p-6 md:p-8 bg-gray-50">
       <div class="max-w-4xl mx-auto mt-10 space-y-6">
         <div class="mb-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
           <p class="text-gray-800">
-            Bienvenue sur l'application <span class="font-semibold text-blue-700">HelpDesk</span> de gestion des tickets d'assistance.<br>
-            Vous êtes connecté en tant qu'<span class="font-semibold">administrateur</span>. Votre rôle consiste à gérer les utilisateurs, les catégories de tickets, et à consulter les statistiques globales de la plateforme.
+            Bienvenue sur l'application
+            <span class="font-semibold text-blue-700">HelpDesk</span> de gestion des tickets d'assistance.<br>
+            Vous êtes connecté en tant qu'<span class="font-semibold">administrateur</span>.
+            Votre rôle consiste à gérer les utilisateurs, les catégories de tickets,
+            et à consulter les statistiques globales de la plateforme.
           </p>
         </div>
 
