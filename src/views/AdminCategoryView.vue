@@ -10,6 +10,8 @@ const newCategory = ref({ name: '' })
 const editingCategory = ref(null)
 const editCategoryData = ref({ name: '' })
 const isProcessing = ref(false)
+const isProcessing2 = ref(false)
+const errorMessage = ref('')
 
 onMounted(() => {
   categoryStore.fetchCategories()
@@ -25,6 +27,7 @@ const createCategory = async () => {
     await categoryStore.fetchCategories()
   } catch (error) {
     console.error('Failed to create category:', error)
+    errorMessage.value = error.response?.data?.message 
   } finally {
     isProcessing.value = false
   }
@@ -36,10 +39,18 @@ const startEditCategory = (category) => {
 }
 
 const updateCategory = async () => {
-  if (editCategoryData.value.name.trim() === '') return
-  await categoryService.updateCategory(editingCategory.value.id, editCategoryData.value)
-  editingCategory.value = null
-  await categoryStore.fetchCategories()
+  try {
+    isProcessing2.value = true
+    if (editCategoryData.value.name.trim() === '') return
+    await categoryService.updateCategory(editingCategory.value.id, editCategoryData.value)
+    editingCategory.value = null
+    await categoryStore.fetchCategories()
+  } catch (error) {
+    console.error('Failed to update category:', error)
+    errorMessage.value = error.response?.data?.message 
+  } finally {
+    isProcessing2.value = false
+  }
 }
 
 const cancelEdit = () => {
@@ -56,9 +67,9 @@ const deleteCategory = async (id) => {
 
 <template>
   <Navbar/>
-  <div class="flex min-h-screen">
-    <Sidebar />
-    <div class="p-4 flex-1 relative">
+  <div class="flex flex-col md:flex-row min-h-screen">
+    <Sidebar class="w-full md:w-64" />
+    <div class="flex-1 p-4 sm:p-6 md:p-8 bg-gray-50">
       <!-- Overlay de chargement -->
       <div
         v-if="categoryStore.loading"
@@ -70,53 +81,86 @@ const deleteCategory = async (id) => {
         </svg>
       </div>
 
-      <h1 class="text-2xl font-bold mb-4">Catégories</h1>
+      <div class="max-w-4xl mx-auto">
+        <h1 class="text-2xl font-bold mb-4">Catégories</h1>
+        
+        <!-- Simple error display -->
+        <div v-if="errorMessage" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+          {{ errorMessage }}
+        </div>
+        
+        <!-- Formulaire d'ajout -->
+        <form @submit.prevent="createCategory" class="mb-4 flex flex-col sm:flex-row gap-2">
+          <input 
+            v-model="newCategory.name" 
+            placeholder="Nom de la nouvelle catégorie" 
+            class="border p-2 rounded flex-1" 
+          />
+          <button 
+            type="submit" 
+            class="bg-blue-500 text-white px-4 py-2 rounded flex items-center justify-center" 
+            :disabled="isProcessing"
+          > 
+            <i v-if="isProcessing" class="fas fa-spinner fa-spin mr-2"></i>
+            Ajouter
+          </button>
+        </form>
 
-      <!-- Formulaire d'ajout -->
-      <form @submit.prevent="createCategory" class="mb-4 flex gap-2">
-        <input v-model="newCategory.name" placeholder="Nom de la nouvelle catégorie" class="border p-2 rounded" />
-        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded" :disabled="isProcessing"> <i v-if="isProcessing" class="fas fa-spinner fa-spin mr-4"></i>Ajouter</button>
-      </form>
+        <!-- Table des catégories -->
+        <div class="bg-white rounded-xl shadow p-4 overflow-x-auto">
+          <table class="min-w-full">
+            <thead>
+              <tr class="border-b">
+                <th class="p-3 text-left">ID</th>
+                <th class="p-3 text-left">Nom</th>
+                <th class="p-3 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="category in categoryStore.categories" :key="category.id" class="border-b hover:bg-gray-50">
+                <td class="p-3">{{ category.id }}</td>
+                <td class="p-3">
+                  <div v-if="editingCategory && editingCategory.id === category.id">
+                    <input v-model="editCategoryData.name" class="border p-1 rounded w-full" />
+                  </div>
+                  <div v-else>
+                    {{ category.name }}
+                  </div>
+                </td>
+                <td class="p-3">
+                  <div v-if="editingCategory && editingCategory.id === category.id" class="flex flex-wrap gap-2">
+                    <button 
+                      @click="updateCategory" 
+                      class="bg-green-500 text-white px-2 py-1 rounded flex items-center" 
+                      :disabled="isProcessing2"
+                    > 
+                      <i v-if="isProcessing2" class="fas fa-spinner fa-spin mr-2"></i>
+                      <span>Enregistrer</span>
+                    </button>
+                    <button @click="cancelEdit" class="bg-gray-300 px-2 py-1 rounded">
+                      Annuler
+                    </button>
+                  </div>
+                  <div v-else class="flex flex-wrap gap-2">
+                    <button @click="startEditCategory(category)" class="bg-yellow-400 px-2 py-1 rounded">
+                      <i class="fas fa-edit"></i>
+                      <span class="hidden sm:inline ml-1">Modifier</span>
+                    </button>
+                    <button @click="deleteCategory(category.id)" class="bg-red-500 text-white px-2 py-1 rounded">
+                      <i class="fas fa-trash"></i>
+                      <span class="hidden sm:inline ml-1">Supprimer</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-      <!-- Table des catégories -->
-      <div class="overflow-x-auto">
-        <table class="min-w-full bg-white border border-gray-300">
-          <thead>
-            <tr>
-              <th class="border p-2 text-left">ID</th>
-              <th class="border p-2 text-left">Nom</th>
-              <th class="border p-2 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="category in categoryStore.categories" :key="category.id">
-              <td class="border p-2">{{ category.id }}</td>
-              <td class="border p-2">
-                <div v-if="editingCategory && editingCategory.id === category.id">
-                  <input v-model="editCategoryData.name" class="border p-1 rounded w-full" />
-                </div>
-                <div v-else>
-                  {{ category.name }}
-                </div>
-              </td>
-              <td class="border p-2">
-                <div v-if="editingCategory && editingCategory.id === category.id">
-                  <button @click="updateCategory" class="bg-green-500 text-white px-2 py-1 rounded mr-2">Enregistrer</button>
-                  <button @click="cancelEdit" class="bg-gray-300 px-2 py-1 rounded">Annuler</button>
-                </div>
-                <div v-else>
-                  <button @click="startEditCategory(category)" class="bg-yellow-400 px-2 py-1 rounded mr-2">Modifier</button>
-                  <button @click="deleteCategory(category.id)" class="bg-red-500 text-white px-2 py-1 rounded">Supprimer</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <!-- Affichage des états -->
+        <div v-if="categoryStore.loading" class="mt-4 text-blue-500">Chargement...</div>
+        <div v-if="categoryStore.error" class="mt-4 text-red-500">{{ categoryStore.error }}</div>
       </div>
-
-      <!-- Affichage des états -->
-      <div v-if="categoryStore.loading" class="mt-4 text-blue-500">Chargement...</div>
-      <div v-if="categoryStore.error" class="mt-4 text-red-500">{{ categoryStore.error }}</div>
     </div>
   </div>
 </template>

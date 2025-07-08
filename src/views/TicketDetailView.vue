@@ -421,7 +421,7 @@ const getCommentAuthor = (comment) => {
   <div class="bg-gray-50 min-h-screen">
     <Navbar />
     
-    <div class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="max-w-7xl mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
       <!-- Loading state -->
       <div v-if="isLoading" class="fixed inset-0 bg-white flex items-center justify-center z-50">
 
@@ -433,33 +433,34 @@ const getCommentAuthor = (comment) => {
       
       <template v-else-if="ticketStore.currentTicket">
         <!-- Main Ticket Panel -->
-        <div class="lg:col-span-2 space-y-6">
+        <div class="lg:col-span-2 space-y-4 sm:space-y-6">
           <!-- Ticket Details -->
           <div class="bg-white rounded-2xl shadow p-6">
-            <div class="flex justify-between items-center">
-              <div>
-                <h1 class="text-lg font-semibold text-gray-700">
-                  Ticket <span class="text-blue-600 font-bold">#{{ ticketStore.currentTicket.id.toString().padStart(3, '0') }}</span>
-                </h1>
-                <p class="text-sm text-gray-500">Créé le {{ formatDate(ticketStore.currentTicket.created_at) }}</p>
-              </div>
-              <div class="flex items-center gap-2">
-                <span :class="[
-                  getPriorityBadgeClass(ticketStore.currentTicket.priority),
-                  'text-xs font-semibold px-2 py-1 rounded-full'
-                ]">
-                  {{ formatPriority(ticketStore.currentTicket.priority) }}
-                </span>
-                <div v-if="isStaff" class="text-right">
-                  <p class="text-sm font-medium">Temps écoulé</p>
-                  <p class="text-rose-600 text-lg font-bold">{{ formatDuration(elapsedTime) }}</p>
-                </div>
-                <div class="flex items-center gap-2 text-sm text-gray-500">
-                <span class="font-medium text-gray-700">{{ ticketStore.currentTicket.user?.firstName }} {{ ticketStore.currentTicket.user?.lastName }}</span> 
-                · ({{ ticketStore.currentTicket.user?.email }})
-              </div>
-              </div>
-            </div>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+  <div>
+    <h1 class="text-lg font-semibold text-gray-700">
+      Ticket <span class="text-blue-600 font-bold">#{{ ticketStore.currentTicket.id.toString().padStart(3, '0') }}</span>
+    </h1>
+    <p class="text-sm text-gray-500">Créé le {{ formatDate(ticketStore.currentTicket.created_at) }}</p>
+  </div>
+  <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-2 md:mt-0">
+    <span :class="[
+      getPriorityBadgeClass(ticketStore.currentTicket.priority),
+      'text-xs font-semibold px-2 py-1 rounded-full'
+    ]">
+      {{ formatPriority(ticketStore.currentTicket.priority) }}
+    </span>
+    <div v-if="isStaff" class="text-right">
+      <p class="text-sm font-medium">Temps écoulé</p>
+      <p class="text-rose-600 text-lg font-bold">{{ formatDuration(elapsedTime) }}</p>
+    </div>
+    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-1 text-sm text-gray-500 mt-2 sm:mt-0">
+      <span class="font-medium text-gray-700">{{ ticketStore.currentTicket.user?.firstName }} {{ ticketStore.currentTicket.user?.lastName }}</span>
+      <span class="hidden sm:block">·</span>
+      <span class="text-xs sm:text-sm">({{ ticketStore.currentTicket.user?.email }})</span>
+    </div>
+  </div>
+</div>
 
             <div class="mt-4">
 
@@ -569,7 +570,7 @@ const getCommentAuthor = (comment) => {
         </div>
 
         <!-- Right Side Panel -->
-        <div class="space-y-6">
+        <div class="space-y-4 sm:space-y-6">
           <!-- Info Card -->
           <div class="bg-white rounded-2xl shadow p-6">
             <h3 class="font-semibold text-lg mb-4">Informations</h3>

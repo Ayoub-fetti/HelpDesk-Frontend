@@ -4,7 +4,7 @@ import { RouterLink } from 'vue-router'
 
 
 <template>
-  <aside class="w-64 h-full bg-gray-50 shadow-md flex flex-col">
+  <aside class="w-64 h-auto md:min-h-screen bg-gray-50 shadow-md flex flex-col">
     <div class="p-6 border-b">
       <h2 class="text-xl font-bold text-blue-700">Admin Panel</h2>
     </div>
@@ -39,9 +39,3 @@ import { RouterLink } from 'vue-router'
 </template>
 
 
-
-<style scoped>
-aside {
-  min-height: 100vh;
-}
-</style>

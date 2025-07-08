@@ -249,7 +249,7 @@ const generatePDF = () => {
       <section class="bg-white rounded-2xl shadow-md p-6">
         <h2 class="text-xl font-semibold mb-4">Nouveaux tickets à assigner</h2>
         <div class="overflow-x-auto">
-          <table class="min-w-full text-sm text-left">
+          <table class="min-w-full text-sm text-left border-separate border-spacing-x-2 sm:border-spacing-x-4">
             <thead class="border-b text-gray-500">
               <tr>
                 <th class="pb-3">ID</th>

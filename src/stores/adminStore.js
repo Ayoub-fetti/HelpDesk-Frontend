@@ -6,6 +6,7 @@ export const useAdminStore = defineStore('admin', () => {const users = ref([])
   const permissions = ref([])
   const loading = ref(false)
   const error = ref(null)
+  const errorMessage = ref('')
 
   const fetchUsers = async (params = {}) => {
     try {
@@ -25,6 +26,7 @@ export const useAdminStore = defineStore('admin', () => {const users = ref([])
       await adminService.createUser(userData)
     } catch (err) {
       error.value = err.response?.data?.message || 'Erreur lors de la création de l\'utilisateur'
+      errorMessage.value = err.response?.data?.message
       throw err
     } finally {
       loading.value = false
